@@ -38,7 +38,7 @@ after(async () => {
 
 const globalPath = join(agentDir, "mcp.json");
 const trustPath = join(agentDir, "trust.json");
-const projectPath = (cwd) => join(cwd, ".pi", "mcp.json");
+const projectPath = (cwd) => join(cwd, ".workagent", "mcp.json");
 const store = new ProjectTrustStore(agentDir);
 const globalText = `${JSON.stringify({ mcpServers: { docs: { url: "https://docs.example.com/mcp" } } }, null, 2)}\n`;
 
@@ -48,10 +48,10 @@ beforeEach(async () => {
   await rm(trustPath, { force: true });
   for (const folder of [trusted, untrusted, fresh, outer]) await rm(folder, { recursive: true, force: true });
   for (const folder of [trusted, untrusted, fresh, inner]) await mkdir(folder, { recursive: true });
-  await mkdir(join(trusted, ".pi"));
+  await mkdir(join(trusted, ".workagent"));
   await writeFile(projectPath(trusted), `${JSON.stringify({ mcpServers: { repo: { command: "node" } } }, null, 2)}\n`);
   store.set(trusted, true);
-  await mkdir(join(untrusted, ".pi", "extensions"), { recursive: true });
+  await mkdir(join(untrusted, ".workagent", "extensions"), { recursive: true });
 });
 
 async function post(body, headers = {}) {
@@ -167,7 +167,7 @@ test("a fresh folder is trusted and written in one step, only when asked to", as
 
   const plain = await add({ text: "npx -y @scope/lint-mcp", scope: "project", cwd: fresh });
   assert.deepEqual([plain.status, plain.body.reason], [403, "project-untrusted"], "a plain add leaves a fresh folder alone");
-  assert.equal(existsSync(join(fresh, ".pi")), false);
+  assert.equal(existsSync(join(fresh, ".workagent")), false);
 
   const { status, body } = await add({ text: "npx -y @scope/lint-mcp", scope: "project", cwd: fresh, trustFolder: true });
   assert.equal(status, 200);
@@ -180,8 +180,8 @@ test("a fresh folder is trusted and written in one step, only when asked to", as
 });
 
 test("a fresh folder that gained resources since the panel offered the step is not trusted", async () => {
-  // A git pull brought .pi/extensions after the button was shown.
-  await mkdir(join(fresh, ".pi", "extensions"), { recursive: true });
+  // A git pull brought .workagent/extensions after the button was shown.
+  await mkdir(join(fresh, ".workagent", "extensions"), { recursive: true });
   const { status, body } = await add({ text: "npx -y @scope/lint-mcp", scope: "project", cwd: fresh, trustFolder: true });
   assert.deepEqual([status, body.reason], [409, "folder-not-fresh"]);
   assert.equal(body.trust.requiresTrust, true);
@@ -190,10 +190,10 @@ test("a fresh folder that gained resources since the panel offered the step is n
   assert.equal(existsSync(projectPath(fresh)), false);
 });
 
-test("a fresh folder with a link to nothing under .pi is not offered the step, and the step refuses it", async () => {
+test("a fresh folder with a link to nothing under .workagent is not offered the step, and the step refuses it", async () => {
   // The SDK's existsSync sees nothing that needs trust yet; the link would need it once its target appears.
-  await mkdir(join(fresh, ".pi"));
-  await symlink(join(root, "not-there-yet"), join(fresh, ".pi", "extensions"));
+  await mkdir(join(fresh, ".workagent"));
+  await symlink(join(root, "not-there-yet"), join(fresh, ".workagent", "extensions"));
   const listed = await (await GET(new Request(`http://localhost/api/mcp?cwd=${encodeURIComponent(fresh)}`, { headers: { host: "localhost" } }))).json();
   assert.deepEqual(listed.project.trust, { requiresTrust: false, trusted: true, decision: null, inherited: false });
   assert.deepEqual(listed.project.trustFolder, { allowed: false, reason: "folder-not-fresh" }, "GET and POST share one freshness rule");
@@ -203,10 +203,10 @@ test("a fresh folder with a link to nothing under .pi is not offered the step, a
   assert.equal(existsSync(projectPath(fresh)), false);
 });
 
-test("a fresh folder holding a project Pi Web never opened is not offered the step, and the step refuses it", async () => {
+test("a fresh folder holding a project WorkAgent never opened is not offered the step, and the step refuses it", async () => {
   // A repository cloned into the folder: trusting the folder would load its extensions with no dialog.
   const cloned = join(fresh, "cloned-repo");
-  await mkdir(join(cloned, ".pi", "extensions"), { recursive: true });
+  await mkdir(join(cloned, ".workagent", "extensions"), { recursive: true });
   const listed = await (await GET(new Request(`http://localhost/api/mcp?cwd=${encodeURIComponent(fresh)}`, { headers: { host: "localhost" } }))).json();
   assert.deepEqual(listed.project.trustFolder, { allowed: false, reason: "trust-too-broad", breadth: { kind: "contains-project", path: cloned } });
   const { status, body } = await add({ text: "npx -y @scope/lint-mcp", scope: "project", cwd: fresh, trustFolder: true });
@@ -217,7 +217,7 @@ test("a fresh folder holding a project Pi Web never opened is not offered the st
 });
 
 test("a folder whose trust would reach other folders is never trusted by the step", async (t) => {
-  // `outer` holds `inner`, a folder Pi Web knows (an allowed root, as a session's folder is).
+  // `outer` holds `inner`, a folder WorkAgent knows (an allowed root, as a session's folder is).
   let response = await add({ text: "npx -y @scope/lint-mcp", scope: "project", cwd: outer, trustFolder: true });
   assert.deepEqual([response.status, response.body.reason], [409, "trust-too-broad"]);
   assert.deepEqual(response.body.breadth, { kind: "contains-folder", path: inner });
@@ -264,17 +264,17 @@ test("two steps for one fresh folder at once: one trusts and adds, the other is 
 });
 
 test("a write that fails after trusting a fresh folder takes the trust back", async () => {
-  // A regular file where .pi should be: the folder is fresh, but nothing can be written under it.
-  await writeFile(join(fresh, ".pi"), "not a folder");
+  // A regular file where .workagent should be: the folder is fresh, but nothing can be written under it.
+  await writeFile(join(fresh, ".workagent"), "not a folder");
   const { status, body } = await add({ text: "npx -y @scope/lint-mcp", scope: "project", cwd: fresh, trustFolder: true });
   assert.equal(status, 500);
   assert.equal(body.reason, "internal");
   assert.deepEqual(await trustFile(), { [trusted]: true }, "the decision written for the step is gone again");
-  assert.equal(await readFile(join(fresh, ".pi"), "utf8"), "not a folder");
+  assert.equal(await readFile(join(fresh, ".workagent"), "utf8"), "not a folder");
 });
 
 test("a write that fails after trusting, whose trust cannot be taken back either, says the folder stays trusted", async (t) => {
-  await writeFile(join(fresh, ".pi"), "not a folder");
+  await writeFile(join(fresh, ".workagent"), "not a folder");
   // The route's store is the test's: the SDK module is shared, so taking the trust back can be made to fail.
   const set = ProjectTrustStore.prototype.set;
   t.mock.method(ProjectTrustStore.prototype, "set", function (path, value) {

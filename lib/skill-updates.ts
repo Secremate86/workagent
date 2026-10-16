@@ -226,7 +226,7 @@ export async function checkSkillUpdate(
   };
 
   try {
-    return install.scope === "global"
+    return install.scope === "global" && install.versionHashKind !== "snapshot"
       ? await checkGlobalSkill(install, resolvedOptions)
       : await checkProjectSkill(install, resolvedOptions);
   } catch (error) {

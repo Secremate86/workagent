@@ -1,12 +1,12 @@
 const CACHE_PREFIX = "pi-web";
-const CACHE_VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
+const CACHE_VERSION = `${new URL(self.location.href).searchParams.get("v") || "dev"}-workagent-v1`;
 const STATIC_CACHE = `${CACHE_PREFIX}-static-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline.html";
 const PRECACHE_URLS = [
   OFFLINE_URL,
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/apple-touch-icon.png",
+  "/icons/workagent-192.png",
+  "/icons/workagent-512.png",
+  "/icons/workagent-apple-touch-icon.png",
 ];
 // A reachable port backed by a dead upstream accepts the connection and then
 // never answers: fetch() neither resolves nor rejects, so the navigation hangs

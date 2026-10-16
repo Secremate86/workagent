@@ -49,7 +49,7 @@ async function listProjectMcpServers(agentDir: string, cwd: string, allowedRoots
 }
 
 // GET /api/project-trust?cwd=<folder>: the trust status, and the servers the
-// project's `.pi/mcp.json` declares, so the trust dialog lists what trusting
+// project's `.workagent/mcp.json` declares, so the trust dialog lists what trusting
 // would connect before anyone trusts the folder (ADR 0006). The listing reads
 // the files only, like GET /api/mcp: no server is spawned, no value resolved,
 // no `!command` run, and env and header values never leave the server.

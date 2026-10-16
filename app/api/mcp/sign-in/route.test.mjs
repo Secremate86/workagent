@@ -20,7 +20,7 @@ const previousDisable = process.env.PI_WEB_DISABLE_MCP;
 process.env.PI_CODING_AGENT_DIR = agentDir;
 delete process.env.PI_WEB_DISABLE_MCP;
 await mkdir(agentDir, { recursive: true });
-await mkdir(join(cwd, ".pi"), { recursive: true });
+await mkdir(join(cwd, ".workagent"), { recursive: true });
 
 const jiti = createJiti(import.meta.url, { alias: { "@": process.cwd() } });
 const { allowFileRoot } = await jiti.import("../../../../lib/file-access.ts");
@@ -44,7 +44,7 @@ after(async () => {
 });
 
 const globalPath = join(agentDir, "mcp.json");
-const projectPath = join(cwd, ".pi", "mcp.json");
+const projectPath = join(cwd, ".workagent", "mcp.json");
 const authPath = join(agentDir, "mcp-auth.json");
 const marker = join(root, "command-ran");
 const store = new ProjectTrustStore(agentDir);
@@ -179,7 +179,7 @@ test("a cancel ends the sign-in, and a flow nobody knows is a 404", async () => 
   assert.equal(cancelled.body.phase, "cancelled");
   assert.equal((await paste(body.flowId, { redirectUrl: "http://127.0.0.1:1/callback?code=c&state=s" })).body.reason, "sign-in-not-waiting");
 
-  const unknown = { status: 404, body: { error: "No sign-in has that id: it ended over a minute ago, or Pi Web restarted", reason: "sign-in-unknown" } };
+  const unknown = { status: 404, body: { error: "No sign-in has that id: it ended over a minute ago, or WorkAgent restarted", reason: "sign-in-unknown" } };
   assert.deepEqual(await poll("no-such-flow"), unknown);
   assert.deepEqual(await cancel("no-such-flow"), unknown);
   assert.equal((await paste("no-such-flow", { redirectUrl: "http://x/?code=c&state=s" })).status, 404);
@@ -203,7 +203,7 @@ test("requests from another page, or not sent as JSON, are refused on every rout
   assert.equal((await paste("any", "{ nope")).body.reason, "invalid-request");
 });
 
-test("only an OAuth server Pi Web would connect signs in", async () => {
+test("only an OAuth server WorkAgent would connect signs in", async () => {
   assert.deepEqual(await start({ scope: "global", name: "lint" }), {
     status: 409,
     body: { error: "MCP server \"lint\" does not use OAuth: only an HTTP server without an Authorization header does", reason: "sign-in-not-oauth", name: "lint" },
@@ -216,7 +216,7 @@ test("only an OAuth server Pi Web would connect signs in", async () => {
   process.env.PI_WEB_DISABLE_MCP = "1";
   assert.deepEqual(await start({ scope: "global", name: "oauth" }), {
     status: 409,
-    body: { error: "PI_WEB_DISABLE_MCP is set, so Pi Web connects no MCP server", reason: "mcp-off" },
+    body: { error: "PI_WEB_DISABLE_MCP is set, so WorkAgent connects no MCP server", reason: "mcp-off" },
   });
 });
 
@@ -224,7 +224,7 @@ test("an untrusted project's server is never contacted; a trusted one's is", asy
   const denied = await start({ scope: "project", name: "repo", cwd });
   assert.deepEqual(denied, {
     status: 403,
-    body: { error: "The project is not trusted, so Pi Web does not start its MCP servers", reason: "project-untrusted" },
+    body: { error: "The project is not trusted, so WorkAgent does not start its MCP servers", reason: "project-untrusted" },
   });
   store.set(cwd, false);
   assert.equal((await start({ scope: "project", name: "repo", cwd })).status, 403);

@@ -4,6 +4,8 @@ import { runNpx } from "@/lib/npx";
 import { getAllowedFileRoots, isExistingFilePathAllowed } from "@/lib/file-access";
 import { hasJsonContentType, isApiRequestAllowed } from "@/lib/request-security";
 import { getProjectTrustStatus } from "@/lib/project-trust";
+import { getGlobalSkillsLockPath } from "@/lib/skill-lock";
+import { installWorkAgentSkills } from "@/lib/workagent-skill-install";
 
 export const dynamic = "force-dynamic";
 
@@ -40,17 +42,12 @@ export async function POST(req: Request) {
     if (isGlobal) args.push("-g");
 
     console.log(`[skills/install] running: npx ${args.join(" ")}`);
-    const { stdout, stderr } = await runNpx(args, {
-      timeout: 60000,
-      cwd: !isGlobal && cwd ? cwd : undefined,
-      env: { ...process.env, FORCE_COLOR: "0" },
+    const { stdout, stderr } = await installWorkAgentSkills({
+      args, scope: isGlobal ? "global" : "project", cwd: cwd || process.cwd(), agentDir: getAgentDir(), globalLockPath: getGlobalSkillsLockPath(),
+      runCli: (stagedArgs, stageCwd) => runNpx(stagedArgs, { timeout: 60_000, cwd: stageCwd, env: { ...process.env, FORCE_COLOR: "0" } }),
     });
 
     const output = (stdout + stderr).replace(ANSI_RE, "");
-    const success = /Installation complete|Installed \d+ skill/.test(output);
-    if (!success) {
-      return NextResponse.json({ error: output.slice(-300) || "Install failed" }, { status: 500 });
-    }
     return NextResponse.json({ success: true, output });
   } catch (e: unknown) {
     const err = e as { stdout?: string; stderr?: string; message?: string };

@@ -1,207 +1,61 @@
-# Pi Web
+# WorkAgent
 
-[中文文档](./docs/README.zh-CN.md) | [日本語](./docs/README.ja.md) | [Русский](./docs/README.ru.md)
+WorkAgent 是 [agegr/pi-web](https://github.com/agegr/pi-web) 的独立 fork，保留 MIT 许可证和原作者版权。上游介绍见 [Pi Web README](docs/PI_WEB_README.md)。
 
-Local browser UI for the [pi coding agent](https://github.com/earendil-works/pi). Pi Web uses the same local configuration and session files as pi, so you can browse and resume conversations, run agent turns, configure models and resources, and inspect project files from a browser.
+WorkAgent 是建立在 Pi Web 上的本地办公工作台。以 WorkBuddy 的功能和工作流程为参考，保留绿色品牌与清爽界面，支持 OpenAI 兼容模型、真实文件交付、权限审批、计划模式、子代理、轻量定时任务和显式长期记忆。
 
-**[Try the interactive demo →](https://agegr.github.io/pi-web/)** The real Pi Web UI runs entirely in your browser, with sample sessions, files and models. There is nothing to install; replies are pre-written and no model is called.
+## 启动
 
-![Pi Web displaying a pi session with structured Markdown, tool calls, and project navigation](https://raw.githubusercontent.com/agegr/pi-web/main/docs/screenshot2.png)
+需要 Node.js 22.19 或更新版本、pnpm、Python 3.12 或更新版本和 uv。在仓库根目录执行：
 
-## Features
-
-- **Session workspace**: browse, resume, rename, export, and delete conversations grouped by project, with running state, context usage, cost, and compaction details.
-- **Two ways to branch**: **New session** creates an independent session file from an earlier message; **Edit from here** creates a branch inside the current session.
-- **Project file tools**: browse and upload files, inspect Git diffs, and preview source, Markdown, images, audio, PDFs, and DOCX files with automatic refresh.
-- **Git worktrees**: switch checkouts from the sidebar while keeping sessions from the same repository grouped together.
-- **Web-based configuration**: manage provider login and API keys, models, model tests, plugin packages, and skills without leaving Pi Web.
-- **English, Simplified Chinese, and Traditional Chinese UI**: Pi Web follows the browser language initially and provides a language switcher in the top bar.
-
-## Quick Start
-
-Pi Web requires Node.js 22.19.0 or newer. Check your version with `node --version`, then run:
-
-```bash
-npx @agegr/pi-web@latest
+```sh
+pnpm install
+uv sync --locked
+pnpm workagent
 ```
 
-The CLI opens a browser after the server is ready. If it does not, open [http://127.0.0.1:30141](http://127.0.0.1:30141). Pi Web listens only on `127.0.0.1` by default.
+打开 [http://127.0.0.1:30141](http://127.0.0.1:30141)。服务默认只绑定本机回环地址。办公工具可以在没有模型密钥的情况下运行；聊天协作需要先配置模型。
 
-If no model provider is configured yet, open the **Models** panel to sign in or add an API key.
+WorkAgent 使用项目内的独立数据目录：
 
-To install the `pi-web` command globally:
+- `.workagent/agent`：本项目的 Pi 会话、模型配置和服务端凭据，与用户全局 Pi 配置隔离。
+- `.workagent/workspace`：默认工作区、复制到工作区的匿名 CSV 示例和生成的文件。办公产物写入 `outputs/` 下各自的操作目录。
+- `.workagent/uv-cache`：本项目启动脚本使用的 Python 依赖缓存。
+- `.workagent/memory`：显式保存的记忆及删除恢复记录；不自动总结聊天，不启用 qmd。
 
-```bash
-npm install -g @agegr/pi-web@latest
-pi-web
-```
+## 配置模型
 
-Commands:
+点击右上角的圆形头像打开快速配置。填写服务商提供的 API 地址、模型 ID、API Key，并选择 `Chat Completions` 或 `Responses` 协议，然后保存并使用。表单初始地址为 `https://api.openai.com/v1`，兼容服务商应替换为其实际地址和模型 ID。
 
-```bash
-pi-web version          # print the installed version
-pi-web status           # list running servers
-pi-web stop [--port N]  # stop a running server
-pi-web open [--port N]  # open a running server in the browser
-pi-web update [--check] # update a global npm install
-```
+API Key 由本机服务端写入 `.workagent/agent/auth.json`，不会保存到浏览器存储；模型地址、协议和模型 ID 保存在同目录的 Pi 配置中。快速配置还提供连接测试入口。已有完整的 Pi 模型设置仍可从“其他服务商与高级设置”打开。
 
-To update, run `pi-web stop`, then `pi-web update` (or run the same install command again). To uninstall, run `npm uninstall -g @agegr/pi-web`.
+首次启动不附带任何模型服务配置、API Key 或历史会话。请自行填写服务商信息。
 
-## Configuration
+## 本地办公工具
 
-For port and hostname, command-line options override the corresponding environment variables. Either `--no-open` or `PI_WEB_NO_OPEN=1` disables automatic browser opening. Run `pi-web --help` (or `-h`) to print startup options and exit without starting the server. Unknown options exit with an error.
+能力中心提供三个不依赖模型的操作：
 
-| Option or environment variable | Purpose | Default |
-| --- | --- | --- |
-| `--help`, `-h` | Print startup options and exit | — |
-| `--port <port>`, `-p <port>`, or `PORT` | Server port | `30141` |
-| `--hostname <host>`, `-H <host>`, or `PI_WEB_HOSTNAME` | Bind hostname | `127.0.0.1` |
-| `--no-open` or `PI_WEB_NO_OPEN=1` | Do not open a browser automatically | Browser opens |
-| `PI_WEB_APP_NAME` | PWA manifest `name` and `short_name`; surrounding whitespace is trimmed, empty values use the default | `Pi Web` |
-| `PI_WEB_SKIP_VERSION_CHECK=1` | Disable Pi Web update checks | Unset |
-| `PI_WEB_ALLOWED_HOSTS` | Additional exact proxy or custom hostnames, comma-separated | Unset |
-| `PI_WEB_PASSWORD` | Enable browser password login; API clients may use Basic Auth with username `pi` | Authentication disabled |
-| `PI_WEB_IDLE_TIMEOUT_MS` | Session idle timeout in milliseconds, up to `2147483647`; `0` disables idle shutdown; invalid or out-of-range values use the default | `600000` (10 min) |
-| `PI_WEB_SHUTDOWN_DEADLINE_MS` | How long extensions get to handle `session_shutdown` before a closing session is disposed anyway, in milliseconds up to `2147483647`; `0`, invalid or out-of-range values use the default | `5000` (5 s) |
+- **生成文件清单**：清点默认工作区文件，生成 CSV 和 Markdown，不移动源文件。
+- **核对示例表格**：按首列主键核对两份匿名 CSV，生成差异 XLSX、可预览的 CSV 和 Markdown 报告；会指出新增、缺失、修改和重复键。
+- **生成示例文档**：按明确给出的标题和正文生成 Markdown 与 Word 文档，不补造业务信息。
 
-Set `PI_WEB_APP_NAME` before starting the server (for example, `PI_WEB_APP_NAME='Work Pi' pi-web`). After changing it, restart the server to serve the new manifest; no rebuild is required. Updates to the name of an already installed PWA are managed by the browser and are not guaranteed to appear immediately. This does not change the page title or icons.
+成果面板可预览 CSV 和 Markdown、下载文件、在文件间开标签，并可全屏或拖动调整面板宽度。完整的 Pi 开发工作台保留在 `/advanced`，可手动输入地址访问；前端不再提供直接跳转按钮。
 
-For example:
+## 当前范围
 
-```bash
-pi-web --help
-pi-web -p 8080 -H 0.0.0.0 --no-open
-```
+顶栏“执行与自动化”管理执行模式、审批历史、定时任务与显式记忆。安全审查默认开启，高风险工具申请一次批准；默认放行需用户明确选择。计划模式阻止修改、系统命令和产物创建，定时与记忆的写入也由服务端阻止。
 
-### Remote Access
+定时任务保存在默认工作区，只有已加载的活跃 Pi 会话负责投递；有待执行任务时该会话保持在线。仅启动 Web 服务不保证有调度会话，服务关闭期间不运行，恢复后可能补触发。界面显示实际调度状态与时区；触发时间不能当作任务成功完成的证明。
 
-Binding to a non-loopback address exposes an agent that can execute high-privilege actions. On a trusted LAN, require a long random password:
+记忆只保存明确要求保留的偏好、事实和决策，支持新增、查看和按条删除；旧格式正文可读，语义搜索未启用。项目资料库、通用 Word/Excel 编辑及独立系统后台调度仍未实现。早期设计文档仅作方向参考，不代表其中所有功能都已批准或实现。
 
-```bash
-PI_WEB_PASSWORD='a-long-random-password' pi-web --hostname 0.0.0.0
-```
 
-Password authentication does not encrypt the connection. Do not expose Pi Web over plain HTTP to the internet; use HTTPS through a trusted reverse proxy or a trusted VPN. If a reverse proxy sends an external hostname, add that exact name to `PI_WEB_ALLOWED_HOSTS`. This allow-list does not change the address Pi Web binds to.
+部署方法见 [Docker 部署](docs/deployment.md)，公开范围见 [发布说明](docs/public-release.md)。
 
-### HTTP Proxy
+### WorkAgent 目录与入口
 
-Server-side model and API requests honor the standard `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` environment variables.
+项目配置、扩展、技能、MCP 和定时任务统一从 `.workagent` 读取；本项目服务端数据目录为 `.workagent/agent`。内置办公技能随源码放在 `resources/workagent-office`，启动后安装到工作区的 `.workagent/skills`。首次启动会迁移原项目配置、会话和定时任务，并在 `.workagent/migration-backups` 保留原目录备份；不会覆盖冲突的新文件，也不会再次恢复已删除的旧任务。聊天正文不会被改写。
 
-On macOS or Linux:
+首页和子代理详情不再提供跳转 `/advanced` 的入口；`/advanced` 路由保留，可手动输入地址访问。子代理详情在当前页面弹窗中查看。依赖包名称、模型协议和内部 SDK 标识保留兼容，目录探测使用真实的新路径。
 
-```bash
-HTTP_PROXY=http://127.0.0.1:7890 \
-HTTPS_PROXY=http://127.0.0.1:7890 \
-NO_PROXY=localhost,127.0.0.1 \
-npx @agegr/pi-web@latest
-```
-
-On Windows PowerShell:
-
-```powershell
-$env:HTTP_PROXY = "http://127.0.0.1:7890"
-$env:HTTPS_PROXY = "http://127.0.0.1:7890"
-$env:NO_PROXY = "localhost,127.0.0.1"
-npx @agegr/pi-web@latest
-```
-
-## Notes
-
-- **Agent data**: Pi Web reads pi data from `~/.pi/agent` by default, including session files under `sessions/<encoded-cwd>/<timestamp>_<uuid>.jsonl`. Set `PI_CODING_AGENT_DIR` to use another pi agent directory.
-- **Filesystem access**: Pi Web must be able to read the agent data directory and the working directories recorded by its sessions. Run Pi Web in the same filesystem environment as pi when sharing existing sessions.
-- **Shared configuration**: the Models panel uses pi's model, settings, and credential storage, so changes are visible to both interfaces.
-- **File access boundary**: the file browser is limited to working directories selected in Pi Web and project or session roots it already knows about; it is not a general filesystem browser.
-- **Git worktrees**: see [Worktrees in Pi Web](./docs/worktrees.md) for switcher visibility, worktree creation, and removal behavior.
-
-### Downstream Session Context Menu
-
-Electron wrappers and other downstream integrations can provide a session-row
-context menu without patching `SessionSidebar`. Listen for the cancelable
-`pi-web:session-row-contextmenu` browser event and call `preventDefault()`
-synchronously when the integration will handle it:
-
-```js
-window.addEventListener("pi-web:session-row-contextmenu", (event) => {
-  event.preventDefault();
-  const { id, path, cwd, name, clientX, clientY, refresh } = event.detail;
-
-  void openSessionMenu({ id, path, cwd, name, clientX, clientY }).then((changed) => {
-    if (changed) refresh();
-  });
-});
-```
-
-The detail object contains `id`, `path`, `cwd`, optional `name`, pointer
-coordinates, and a `refresh()` callback for actions that change the session
-list. If no listener cancels the extension event, Pi Web opens its built-in
-session menu (pin, rename, fork, mark read or unread, archive, open in new
-tab, delete) at the pointer instead of the browser's native context menu.
-The row's `⋯` button always opens the built-in menu and does not dispatch the
-event. Sessions not yet saved to disk get no built-in menu, so the native one
-still appears for them. This hook is browser-side and independent of Pi agent
-extensions.
-
-### Extension Session Liveness
-
-Server-side Pi extensions with detached work can prevent automatic idle
-session eviction through the versioned global registry:
-
-```js
-const liveness = globalThis[Symbol.for("@agegr/pi-web/session-liveness/v1")];
-const release = liveness?.version === 1
-  ? liveness.register({
-      name: "my-extension",
-      sessionId,
-      sessionFile: sessionFile || undefined,
-      isActive: () => detachedJobs.size > 0,
-    })
-  : () => {};
-```
-
-Register once per active extension session and call the returned idempotent
-`release` function on session shutdown, replacement, or reload. `isActive`
-must be synchronous, cheap, and scoped to the supplied exact session id or
-file. Provider errors fail safe by preserving that session. This lease only
-affects automatic idle eviction; explicit shutdown and Stop fallback cleanup
-still take precedence.
-
-## Development
-
-```bash
-npm install
-npm run dev
-```
-
-The development server runs at [http://127.0.0.1:30141](http://127.0.0.1:30141). Run the common checks with:
-
-```bash
-npm test
-node_modules/.bin/tsc --noEmit
-npm run lint
-```
-
-Do not run `next build` or `npm run build` during normal development. It writes to `.next/` and can interfere with the development server; leave builds for release work.
-
-Before starting on a feature, read [Contributing](./CONTRIBUTING.md) for what is in scope and the pull request checklist.
-
-Contributor guides: [Internationalization](./docs/i18n.md) and [Release process](./docs/release.md).
-
-## Repository Layout
-
-```text
-app/             Next.js UI and API routes
-components/      React UI components
-hooks/           Client state and interaction hooks
-lib/             Session, agent, model, file, Git, and security logic
-public/          Static assets and PWA files
-bin/             npm CLI entrypoint and launch option parsing
-docs/            Focused user and contributor guides
-demo/            Static browser demo published to GitHub Pages (see demo/README.md)
-```
-
-See [AGENTS.md](./AGENTS.md) for the architecture notes and detailed file map.
-
-## License
-
-[MIT](./LICENSE)
+SDK 配置适配在 `scripts/workagent-sdk-hooks.mjs` 中，按固定版本的配置契约加载，不修改 `node_modules`。使用 `pnpm workagent` 或 `pnpm dev` 启动；独立运行涉及 SDK 的测试时加上 `node --import ./scripts/workagent-sdk-hooks.mjs --test …`。

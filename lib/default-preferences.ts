@@ -19,7 +19,7 @@ export interface DefaultPreferencesEdit {
  * Project settings keys that would hide this edit.
  *
  * `SettingsManager` only ever writes the global file, and a project
- * `.pi/settings.json` value wins over it, so writing a default the project
+ * `.workagent/settings.json` value wins over it, so writing a default the project
  * overrides would report success while new chats kept starting with the
  * project's choice. The route refuses instead and names the file.
  */
@@ -38,7 +38,7 @@ export function shadowingProjectKeys(
 }
 
 export function projectSettingsPath(cwd: string): string {
-  return displaySettingsPath(join(cwd, ".pi", "settings.json"));
+  return displaySettingsPath(join(cwd, ".workagent", "settings.json"));
 }
 
 /**

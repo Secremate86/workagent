@@ -134,7 +134,7 @@ export async function GET(req: Request) {
 function writeTarget(scope: McpScope, project: Project | undefined, agentDir: string): McpConfigFileTarget | Refusal {
   if (scope === "global") return { scope: "global", agentDir };
   if (!project) return new Refusal(400, "invalid-request", "A project server needs the project's cwd");
-  const refused = mcpProjectTrustRefusal(project.cwd, agentDir, "The project is not trusted, so its .pi/mcp.json is not changed");
+  const refused = mcpProjectTrustRefusal(project.cwd, agentDir, "The project is not trusted, so its .workagent/mcp.json is not changed");
   if (refused) return asRefusal(refused);
   return { scope: "project", cwd: project.cwd, allowedRoots: project.allowedRoots };
 }
@@ -192,7 +192,7 @@ async function overviewResponse(agentDir: string, project: Project | undefined, 
   }
 }
 
-/** Turning on an entry that references PI_WEB_PASSWORD is refused: Pi Web would not connect it, and the pi CLI would send the password. */
+/** Turning on an entry that references PI_WEB_PASSWORD is refused: WorkAgent would not connect it, and the pi CLI would send the password. */
 function webPasswordRefusal(internals: PiSdkInternals) {
   return (_name: string, entry: Record<string, unknown>) => (findWebPasswordField(entry, internals) ? "web-password" as const : undefined);
 }
@@ -206,7 +206,7 @@ function outcomeRefusal(outcome: McpEnabledOutcome<"web-password">, path: string
     case "not-an-object":
       return new Refusal(409, "entry-not-object", `${path} defines MCP server "${name}" as something other than an object, so it has nothing to switch`, { path, name });
     case "refused":
-      return new Refusal(409, "web-password", `"${name}" references PI_WEB_PASSWORD, so Pi Web does not turn it on`, { name });
+      return new Refusal(409, "web-password", `"${name}" references PI_WEB_PASSWORD, so WorkAgent does not turn it on`, { name });
     default:
       return undefined;
   }
@@ -262,7 +262,7 @@ async function setServerExposure(
 /**
  * Turns a global server on or off in the panel's project alone, as `/mcp`'s
  * "Enable / Disable in this project" does: an override entry in the project's
- * `.pi/mcp.json` (pi 1.0.1), written under any project write's checks. The
+ * `.workagent/mcp.json` (pi 1.0.1), written under any project write's checks. The
  * global entry must be one pi loads, since an override of anything else is
  * skipped; turning on one that references PI_WEB_PASSWORD is refused, as its
  * switch would be. Remove on the override's row goes back to the global value.
@@ -286,7 +286,7 @@ async function switchServerInProject(
   const global = readMcpServerConfig({ agentDir, internals, scope: "global", name });
   if (typeof global === "string") return refusal(409, "server-invalid", global, { name });
   if (enabled && findWebPasswordField(global.config, internals)) {
-    return refusal(409, "web-password", `"${name}" references PI_WEB_PASSWORD, so Pi Web does not turn it on`, { name });
+    return refusal(409, "web-password", `"${name}" references PI_WEB_PASSWORD, so WorkAgent does not turn it on`, { name });
   }
   try {
     const { value: outcome, path } = await setMcpServerEnabledInProject(target, name, enabled);
@@ -493,7 +493,7 @@ function readAddRequest(body: Record<string, unknown>): McpAddRequest | Refusal 
   };
 }
 
-/** The folder's trust for the page after a project write: `.pi/mcp.json` alone makes it require trust. */
+/** The folder's trust for the page after a project write: `.workagent/mcp.json` alone makes it require trust. */
 function trustAfterWrite(cwd: string, agentDir: string): ProjectTrustStatus | undefined {
   try {
     const status = getProjectTrustStatus(cwd, agentDir);

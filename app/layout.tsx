@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_Mono } from "next/font/google";
 import { PwaRegistration } from "@/components/PwaRegistration";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "katex/dist/katex.min.css";
@@ -7,29 +6,24 @@ import "./globals.css";
 import "./settings.css";
 import "./sidebar.css";
 import "./sidebar-menu.css";
-
-const notoSansMono = Noto_Sans_Mono({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-noto-mono",
-  display: "swap",
-});
+import "./workagent.css";
 
 export const metadata: Metadata = {
-  title: "Pi Web",
-  description: "Pi Web interface for the pi coding agent",
-  applicationName: "Pi Web",
+  title: "WorkAgent · 你的 AI 工作搭子",
+  description: "WorkAgent 本地 AI 工作台，让想法成为成果。",
+  applicationName: "WorkAgent",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       {
-        url: "/icons/icon-192.png",
-        sizes: "192x192",
-        type: "image/png",
+        url: "/workagent.svg",
+        sizes: "any",
+        type: "image/svg+xml",
       },
     ],
     apple: [
       {
-        url: "/icons/apple-touch-icon.png",
+        url: "/icons/workagent-apple-touch-icon.png",
         sizes: "180x180",
         type: "image/png",
       },
@@ -38,7 +32,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Pi Web",
+    title: "WorkAgent",
   },
   formatDetection: {
     telephone: false,
@@ -62,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" translate="no" className={`${notoSansMono.variable} notranslate`} suppressHydrationWarning>
+    <html lang="zh-CN" translate="no" className="notranslate" suppressHydrationWarning>
       <head>
         <meta name="google" content="notranslate" />
         <script

@@ -76,17 +76,17 @@ const TRUST_READ_WARNINGS_MAX = 200;
 
 /**
  * Whether the trust-gated configuration of the project at `cwd` (its
- * `.pi/mcp.json`) may be read right now: true only while the folder requires
+ * `.workagent/mcp.json`) may be read right now: true only while the folder requires
  * trust and a decision, exact or inherited, trusts it. The folder's resources
  * and `trust.json` are read on every call, so a decision made anywhere (the
- * trust dialog, the pi CLI) and a `.pi/` resource that appeared since (`git
+ * trust dialog, the pi CLI) and a `.workagent/` resource that appeared since (`git
  * pull`, `pi mcp add -l`, the model's write tool) count at once. That is what
  * a per-wrapper `SettingsManager.isProjectTrusted()` cannot give: it is fixed
  * when the wrapper is built, `true` for a folder that needed no trust then,
  * and refreshed only on reload.
  *
  * A folder that requires no trust gets `false`, although its status reads
- * `trusted: true`. It has no `.pi/mcp.json` — that file alone makes a folder
+ * `trusted: true`. It has no `.workagent/mcp.json` — that file alone makes a folder
  * require trust — so nothing is lost, while `true` would let the caller read a
  * file that landed between this check and its own read with no decision at all.
  *
@@ -131,17 +131,17 @@ export function trustProject(cwd: string, agentDir: string): ProjectTrustStatus 
 
 /**
  * Reload options that gate project-local, trust-requiring resources — a
- * repository's `.pi/extensions`, project `.pi/settings.json` extension
+ * repository's `.workagent/extensions`, project `.workagent/settings.json` extension
  * entries, and `.agents/skills` — behind the SDK's project-trust store.
  *
- * Pi Web *executes* project extensions when it builds session services: their
+ * WorkAgent *executes* project extensions when it builds session services: their
  * factory runs on import and their `session_start` handlers run on startup.
- * Without a trust gate, merely opening an untrusted repository in Pi Web runs
+ * Without a trust gate, merely opening an untrusted repository in WorkAgent runs
  * repository-controlled code locally (issue #236). The SDK's resource loader
  * only imports project extensions once `resolveProjectTrust` resolves true, so
  * denying trust keeps them dormant.
  *
- * Pi Web and the `pi` CLI share the same trust store. Projects with gated
+ * WorkAgent and the `pi` CLI share the same trust store. Projects with gated
  * resources default to untrusted until either client records a trust decision.
  * Returns `undefined` when the project has no trust-requiring resources,
  * leaving ordinary projects on their existing load path.
@@ -157,16 +157,16 @@ export function projectTrustReloadOptions(
 
 // ---------------------------------------------------------------------------
 // Trusting a fresh folder in the same step as writing to it (ADR 0006,
-// "Fresh folders"). Writing `.pi/mcp.json` makes a folder require trust, and
+// "Fresh folders"). Writing `.workagent/mcp.json` makes a folder require trust, and
 // `POST /api/project-trust` refuses one that does not require it yet, so
 // adding a project server to a folder with no decision would leave the server
-// behind Restricted mode with no way to trust it from Pi Web.
+// behind Restricted mode with no way to trust it from WorkAgent.
 // ---------------------------------------------------------------------------
 
 /**
  * The SDK's `TRUST_REQUIRING_PROJECT_CONFIG_RESOURCES`
  * (`dist/core/trust-manager.js`), which it does not export: what under
- * `<cwd>/.pi` makes a folder require trust. `lib/project-trust.test.mjs`
+ * `<cwd>/.workagent` makes a folder require trust. `lib/project-trust.test.mjs`
  * compares it with the SDK's own list, so an upgrade that adds one fails there.
  */
 export const TRUST_REQUIRING_PROJECT_ENTRIES = [
@@ -201,8 +201,8 @@ function somethingAt(path: string): boolean {
 
 /**
  * Whether anything at all sits where the SDK looks for trust-requiring
- * resources, by `lstat`: `<cwd>/.pi/<entry>` for each of
- * `TRUST_REQUIRING_PROJECT_ENTRIES`, a `.pi` that is a link to nothing, and
+ * resources, by `lstat`: `<cwd>/.workagent/<entry>` for each of
+ * `TRUST_REQUIRING_PROJECT_ENTRIES`, a `.workagent` that is a link to nothing, and
  * `.agents/skills` in the folder or an ancestor (not the home folder's own).
  * Stricter than `hasTrustRequiringProjectResources()`, whose `existsSync`
  * skips a link to nothing: such a link starts counting the moment its target
@@ -219,13 +219,13 @@ export function hasTrustRelevantEntries(cwd: string, home: string = process.env.
   }
 }
 
-/** What under `folder/.pi` makes it require trust, or a `.pi` that is a link to nothing, by `lstat`. */
+/** What under `folder/.workagent` makes it require trust, or a `.workagent` that is a link to nothing, by `lstat`. */
 function hasOwnTrustEntries(folder: string): boolean {
-  const configDir = join(folder, ".pi");
+  const configDir = join(folder, ".workagent");
   try {
     if (lstatSync(configDir).isSymbolicLink() && realPathOr(configDir) === configDir) return true;
   } catch {
-    // No `.pi`.
+    // No `.workagent`.
   }
   return TRUST_REQUIRING_PROJECT_ENTRIES.some((entry) => somethingAt(join(configDir, entry)));
 }
@@ -234,19 +234,19 @@ function hasOwnTrustEntries(folder: string): boolean {
 export const NESTED_PROJECT_SCAN_DEPTH = 4;
 /** How many folders it reads before it stops and refuses the step, since it cannot tell. */
 export const NESTED_PROJECT_SCAN_MAX_FOLDERS = 2000;
-/** Never descended into: dependencies and history hold no project, and `.pi` / `.agents` are checked, not walked. */
-const NESTED_PROJECT_SCAN_SKIP = new Set(["node_modules", ".git", ".pi", ".agents"]);
+/** Never descended into: dependencies and history hold no project, and `.workagent` / `.agents` are checked, not walked. */
+const NESTED_PROJECT_SCAN_SKIP = new Set(["node_modules", ".git", ".workagent", ".agents"]);
 
 /**
  * A folder below `cwd` that would inherit a decision trusting `cwd`: one with
- * resources that need trust (`.pi/<entry>` for each of
- * `TRUST_REQUIRING_PROJECT_ENTRIES`, a `.pi` that is a link to nothing, or
+ * resources that need trust (`.workagent/<entry>` for each of
+ * `TRUST_REQUIRING_PROJECT_ENTRIES`, a `.workagent` that is a link to nothing, or
  * `.agents/skills`, all by `lstat`) and no decision of its own or between it
  * and `cwd`. An exact decision below wins over the new one anyway. Fresh
- * folders are mostly containers (`~/work`, `~/code`, a dated `~/pi-cwd`
- * folder), which often hold repositories Pi Web has never opened, and
- * trusting the container would load such a repository's `.pi/extensions` and
- * connect its `.pi/mcp.json` with no dialog the first time it is opened.
+ * folders are mostly containers (`~/work`, `~/code`, a dated `~/workagent-cwd`
+ * folder), which often hold repositories WorkAgent has never opened, and
+ * trusting the container would load such a repository's `.workagent/extensions` and
+ * connect its `.workagent/mcp.json` with no dialog the first time it is opened.
  *
  * Breadth first, `NESTED_PROJECT_SCAN_DEPTH` levels deep, never through a
  * link, `node_modules` or `.git`. Past `NESTED_PROJECT_SCAN_MAX_FOLDERS`
@@ -288,7 +288,7 @@ export function findInheritingTrustProject(cwd: string, agentDir: string): Fresh
       }
       // `cwd` itself was checked before (`hasTrustRelevantEntries()`).
       if (depth > 0) {
-        const needsTrust = (names.has(".pi") && hasOwnTrustEntries(dir)) || (names.has(".agents") && somethingAt(join(dir, ".agents", "skills")));
+        const needsTrust = (names.has(".workagent") && hasOwnTrustEntries(dir)) || (names.has(".agents") && somethingAt(join(dir, ".agents", "skills")));
         if (needsTrust && !hasDecision(dir)) return { kind: "contains-project", path: dir };
       }
       next.push(...children);
@@ -305,11 +305,11 @@ function within(target: string, root: string): boolean {
 
 /**
  * Why trusting `cwd` would trust more than the one folder, or undefined when
- * it would not. A decision is inherited by every folder below it, so Pi Web
+ * it would not. A decision is inherited by every folder below it, so WorkAgent
  * never trusts by itself the home folder, a filesystem root, a folder that
  * holds the home folder or Pi's agent folder, one that holds another folder
- * Pi Web knows (`knownFolders`: the folders sessions ran in, their projects,
- * and folders chosen in Pi Web, which is what the allowed file roots hold),
+ * WorkAgent knows (`knownFolders`: the folders sessions ran in, their projects,
+ * and folders chosen in WorkAgent, which is what the allowed file roots hold),
  * or one that holds a project with no decision that needs trust
  * (`findInheritingTrustProject()`). Paths are compared by real path.
  */
@@ -361,13 +361,13 @@ function message(error: unknown): string {
 
 /**
  * Trusts a fresh folder and then runs `write` (which makes it require trust,
- * such as adding a server to its `.pi/mcp.json`), as one step. Requests for
+ * such as adding a server to its `.workagent/mcp.json`), as one step. Requests for
  * the same folder run one at a time (a per-folder chain on globalThis), and
  * inside it the folder is checked again: no trust-requiring entry by `lstat`
  * (`hasTrustRelevantEntries()`), no decision for it or an ancestor, and no
  * project below it that would inherit the decision (`findInheritingTrustProject()`). A
  * folder that changed since the panel offered the step (a `git pull` that
- * brought `.pi/extensions`, a trust given elsewhere) is refused with its new
+ * brought `.workagent/extensions`, a trust given elsewhere) is refused with its new
  * status: trusting it now would also trust what arrived, unseen.
  *
  * Trust comes first, then the write: the likelier failure, a `trust.json`

@@ -40,7 +40,7 @@ import { splitShellWords, type ShellWordsError } from "./shell-words";
  *   leading `!command` in env values, header values and `oauth.clientSecret`,
  *   so literals there are escaped (`$` → `$$`, a leading `!` → `$!`); copied
  *   unchanged, a value starting with `!` would run as a shell command on the
- *   Pi Web host at every connection. command, args, url and cwd are used raw
+ *   WorkAgent host at every connection. command, args, url and cwd are used raw
  *   by the SDK and are never escaped. Only `pi mcp add` and the "this is a pi
  *   config" toggle keep values as written, and a `!command` is then noted.
  * - References are translated into pi's `${NAME}` (`${env:X}`, `{env:X}`,
@@ -170,7 +170,7 @@ function noteFinishedConfig(server: McpImportServer): void {
   const config = server.config;
   if ("url" in config) {
     // These values are sent to the server (or its authorization server), so a
-    // reference reads the Pi Web host's environment out to a remote party.
+    // reference reads the WorkAgent host's environment out to a remote party.
     for (const [header, value] of Object.entries(config.headers ?? {})) {
       const names = configValueEnvVarNames(value);
       if (names.length > 0) server.notes.push({ code: "header-env-reference", params: { header, names: names.join(", ") } });
@@ -259,7 +259,7 @@ export function parseMcpImport(text: string, options: McpImportOptions = {}): Mc
 
 /**
  * What the user gives a field: the text itself, or the name of an environment
- * variable on the Pi Web host, stored as a `${NAME}` reference instead of the
+ * variable on the WorkAgent host, stored as a `${NAME}` reference instead of the
  * secret (only in a value pi resolves: an env value, a header value,
  * `oauth.clientSecret`).
  */

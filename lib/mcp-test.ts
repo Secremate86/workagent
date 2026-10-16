@@ -26,7 +26,7 @@ import type {
 
 // Settings › MCP's Test (ADR 0006): connect one `mcp.json` entry once, outside
 // any session, list what it offers, and close it again. It connects the way a
-// session does — the SDK's `McpServerConnection`, Pi Web's transport factory
+// session does — the SDK's `McpServerConnection`, WorkAgent's transport factory
 // (scrubbed environment, PI_WEB_PASSWORD refused), the default OAuth store in
 // `mcp-auth.json` — so what it finds is what a session would find. The route
 // (`app/api/mcp/test/route.ts`) decides whether an entry may be tested at all
@@ -335,7 +335,7 @@ function splitStderr(message: string, stdio: StdioTransport | undefined): { erro
 
 /**
  * One entry's connection as a test opens it: the SDK's `McpServerConnection`
- * through Pi Web's transport factory, with every transport it creates kept so
+ * through WorkAgent's transport factory, with every transport it creates kept so
  * that closing can reach them directly. Settings › MCP's sign-in
  * (`lib/mcp-sign-in.ts`) opens its connection the same way and keeps it from
  * the first connect, which records the server's OAuth challenge, through the
@@ -483,7 +483,7 @@ export async function observeTestConnection(
 }
 
 /**
- * The SDK's connection to one entry through Pi Web's transport factory, until
+ * The SDK's connection to one entry through WorkAgent's transport factory, until
  * it settles or `signal` aborts. With `guard`, an OAuth entry's connection
  * reads and refreshes tokens through `guardedCredentialStore()`, as a
  * sign-in's does: a refresh still on its way when the URL is signed out

@@ -113,7 +113,7 @@ test("a blocked sign-in is disabled and points at the visible reason", () => {
     assert.match(button.attributes, /disabled=""/);
     const id = button.attributes.match(/aria-describedby="([^"]+)"/)?.[1];
     assert.ok(id, button.label);
-    assert.match(html, new RegExp(`<span id="${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}" class="mcp-config-line is-dim">This project is not trusted, so Pi Web does not sign in to or out of its servers\\.</span>`));
+    assert.match(html, new RegExp(`<span id="${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}" class="mcp-config-line is-dim">This project is not trusted, so WorkAgent does not sign in to or out of its servers\\.</span>`));
   }
   assert.doesNotMatch(text(html), /may replace|Sign out deletes/, "no explanation of what cannot be done");
   // A PI_WEB_PASSWORD entry cannot sign in, but its tokens can still go.
@@ -150,8 +150,8 @@ test("waiting for the browser shows the page as a link, the paste box, and where
   // The box is never focused by itself, has a name, and submits only a value.
   assert.match(html, /<input class="oauth-paste-input" placeholder="http:\/\/127\.0\.0\.1:…\/callback\?code=…" aria-label="Address the browser landed on" value=""\/>/);
   assert.match(html, /<button type="button" class="oauth-paste-submit" disabled="">Continue<\/button>/);
-  assert.match(text(html), /After you approve, the browser is sent to http:\/\/127\.0\.0\.1:53682\/callback, which only the computer running Pi Web can open\./);
-  assert.match(text(html), /Pi Web waits up to 5 minutes from the start of the sign-in\./);
+  assert.match(text(html), /After you approve, the browser is sent to http:\/\/127\.0\.0\.1:53682\/callback, which only the computer running WorkAgent can open\./);
+  assert.match(text(html), /WorkAgent waits up to 5 minutes from the start of the sign-in\./);
   assert.deepEqual(buttons(html).map((button) => button.label), ["Continue", "Cancel sign-in"]);
 
   // A page that is not an http(s) address is shown as text, never as a link.
@@ -180,16 +180,16 @@ test("how the sign-in ended stays under the row, with Sign in again", () => {
   assert.match(after, /<span role="status" class="mcp-config-line is-warning">Signed in, but the server did not connect afterwards\. Status above says why\.<\/span>/);
   const failed = row({ run: { flow: flow("failed", { failure: "sign-in-failed", error: "registration failed: •••" }) } });
   assert.match(failed, /<span role="status" class="mcp-config-line is-error">The sign-in failed\.<\/span><span class="mcp-config-line is-error">Error: <code class="mcp-config-chip">registration failed: •••<\/code><\/span>/);
-  assert.match(text(row({ run: { flow: flow("expired") } })), /The sign-in was not finished within 5 minutes, so Pi Web stopped waiting\./);
+  assert.match(text(row({ run: { flow: flow("expired") } })), /The sign-in was not finished within 5 minutes, so WorkAgent stopped waiting\./);
   assert.match(text(row({ run: { flow: flow("cancelled") } })), /Sign-in cancelled\./);
   assert.deepEqual(buttons(row({ run: { flow: flow("cancelled") } })).map((button) => button.label), ["Sign in"]);
   // A flow the server forgot, and requests that failed, each say so.
-  assert.match(text(row({ run: { flow: flow("authorize"), gone: true } })), /Pi Web no longer knows this sign-in: it ended a while ago, or Pi Web restarted\. Press Sign in to start again\./);
+  assert.match(text(row({ run: { flow: flow("authorize"), gone: true } })), /WorkAgent no longer knows this sign-in: it ended a while ago, or WorkAgent restarted\. Press Sign in to start again\./);
   assert.match(text(row({ run: { error: { error: "x", reason: "sign-in-not-oauth" } } })), /Could not sign in: This server does not sign in with OAuth: only an HTTP server without an Authorization header does\./);
-  assert.match(text(row({ run: { error: { error: "x", reason: "project-untrusted" } } })), /Could not sign in: This project is not trusted, so Pi Web does not sign in to or out of its servers\./);
-  assert.match(text(row({ run: { error: { error: "x", reason: "unparsable" } } })), /Could not sign in: Pi Web cannot read this entry from its file anymore\. Press Refresh\./);
-  assert.match(text(row({ run: { error: { error: "GET timed out", timedOut: true } } })), /Pi Web did not answer in time\. Press Sign in again to see the sign-in under way\./);
-  assert.match(text(row({ server: { ...oauth, signedIn: true }, run: { signOutError: { error: "x", timedOut: true } } })), /Could not sign out: Pi Web did not answer in time, so the change may not have been made\./);
+  assert.match(text(row({ run: { error: { error: "x", reason: "project-untrusted" } } })), /Could not sign in: This project is not trusted, so WorkAgent does not sign in to or out of its servers\./);
+  assert.match(text(row({ run: { error: { error: "x", reason: "unparsable" } } })), /Could not sign in: WorkAgent cannot read this entry from its file anymore\. Press Refresh\./);
+  assert.match(text(row({ run: { error: { error: "GET timed out", timedOut: true } } })), /WorkAgent did not answer in time\. Press Sign in again to see the sign-in under way\./);
+  assert.match(text(row({ server: { ...oauth, signedIn: true }, run: { signOutError: { error: "x", timedOut: true } } })), /Could not sign out: WorkAgent did not answer in time, so the change may not have been made\./);
   assert.match(text(row({ run: { signedOut: { removed: true } } })), /Signed out: the tokens stored for this server were deleted\./);
   assert.match(text(row({ run: { signedOut: { removed: false } } })), /Nothing was stored for this server, so there was nothing to sign out of\./);
 });
@@ -208,7 +208,7 @@ test("a sign-in joined from the other entry of the name and URL ends naming that
 
 test("a failed cancel is shown while the sign-in runs, and not once it has ended", () => {
   const cancelError = { error: "DELETE timed out", timedOut: true };
-  assert.match(text(row({ run: { flow: flow("authorize", { authorizationUrl: PAGE }), cancelError } })), /Could not cancel the sign-in: Pi Web did not answer in time\. The sign-in may still be under way/);
+  assert.match(text(row({ run: { flow: flow("authorize", { authorizationUrl: PAGE }), cancelError } })), /Could not cancel the sign-in: WorkAgent did not answer in time\. The sign-in may still be under way/);
   const ended = text(row({ run: { flow: flow("done", { result: { state: "connected", tools: [], toolCount: 1, durationMs: 4, testedAt: 1 } }), cancelError } }));
   assert.match(ended, /Signed in\./);
   assert.doesNotMatch(ended, /Could not cancel/);

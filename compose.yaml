@@ -1,0 +1,23 @@
+services:
+  workagent:
+    build: .
+    image: workagent:local
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      PI_WEB_PASSWORD: ${PI_WEB_PASSWORD:?Set PI_WEB_PASSWORD in .env first}
+      PI_CODING_AGENT_DIR: /app/.workagent/agent
+      PI_MEMORY_DIR: /app/.workagent/memory
+      PI_MEMORY_EXIT_SUMMARY: "off"
+      PI_MEMORY_SUMMARIZE_TRANSITIONS: "0"
+      PI_MEMORY_QMD_UPDATE: "off"
+      PI_MEMORY_NO_SEARCH: "1"
+      UV_CACHE_DIR: /tmp/uv-cache
+      TZ: Asia/Shanghai
+    ports:
+      - "127.0.0.1:30142:30141"
+    volumes:
+      - workagent-data:/app/.workagent
+volumes:
+  workagent-data:

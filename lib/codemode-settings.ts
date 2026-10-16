@@ -81,7 +81,7 @@ export async function writeCodemodePreference(
 // A project's own defaultTools
 // ---------------------------------------------------------------------------
 
-/** What a trusted project's `.pi/settings.json` makes of Code mode for its sessions, whatever the global choice. */
+/** What a trusted project's `.workagent/settings.json` makes of Code mode for its sessions, whatever the global choice. */
 export interface ProjectCodemodeOverride {
   settingsPath: string;
   /** "always" when its sessions start with `codemode` active, "automatic" when they start without it. */
@@ -133,7 +133,7 @@ export function projectSettingsPath(cwd: string): string {
 
 /**
  * Whether the project at `cwd` decides Code mode for its sessions through its
- * `.pi/settings.json`. Call it only for a project whose settings sessions read
+ * `.workagent/settings.json`. Call it only for a project whose settings sessions read
  * (a trusted one): an untrusted project's file never reaches a session. The
  * file is read without pi's lock, as `readBuiltinExtensionSwitches()` reads
  * it, so a write caught halfway reads as unparsable and reports nothing until
@@ -293,7 +293,7 @@ export async function writeCodemodeMode(
   );
 }
 
-/** What a trusted project's `.pi/settings.json` makes of the mode for its sessions, whatever the global value. */
+/** What a trusted project's `.workagent/settings.json` makes of the mode for its sessions, whatever the global value. */
 export interface ProjectCodemodeMode extends CodemodeModeSetting {
   settingsPath: string;
 }
@@ -310,7 +310,7 @@ export function projectCodemodeMode(projectText: string | undefined): CodemodeMo
 
 /**
  * Whether the project at `cwd` decides the mode for its sessions through its
- * `.pi/settings.json`; read as `readProjectCodemodeOverride()` reads it, and
+ * `.workagent/settings.json`; read as `readProjectCodemodeOverride()` reads it, and
  * only for a project whose settings sessions read.
  */
 export function readProjectCodemodeMode(cwd: string): ProjectCodemodeMode | undefined {
@@ -367,7 +367,7 @@ export async function writeCodemodeInlineBudget(
   return writeCodemodeValue(settingsPath, "inlineBudget", budget, inlineBudgetSetting);
 }
 
-/** What a trusted project's `.pi/settings.json` makes of the budget for its sessions, whatever the global value. */
+/** What a trusted project's `.workagent/settings.json` makes of the budget for its sessions, whatever the global value. */
 export interface ProjectCodemodeInlineBudget extends CodemodeInlineBudgetSetting {
   settingsPath: string;
 }
@@ -384,7 +384,7 @@ export function projectCodemodeInlineBudget(projectText: string | undefined): Co
 
 /**
  * Whether the project at `cwd` decides the budget for its sessions through its
- * `.pi/settings.json`; read as `readProjectCodemodeOverride()` reads it, and
+ * `.workagent/settings.json`; read as `readProjectCodemodeOverride()` reads it, and
  * only for a project whose settings sessions read.
  */
 export function readProjectCodemodeInlineBudget(cwd: string): ProjectCodemodeInlineBudget | undefined {

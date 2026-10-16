@@ -1,5 +1,5 @@
 /**
- * Links that open a session or a fresh composer of this Pi Web, and the click
+ * Links that open a session or a fresh composer of this WorkAgent, and the click
  * rule that keeps an ordinary session-link click inside the page.
  *
  * `?session=<id>` alone, resolved against the page the link sits on: the

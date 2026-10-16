@@ -37,7 +37,7 @@ export interface SubagentProfile {
   extensions?: string[];
   loadSkills: boolean;
   loadExtensions: boolean;
-  /** Whether this profile enables Pi Web's codemode tool. Omitted profiles are disabled. */
+  /** Whether this profile enables WorkAgent's codemode tool. Omitted profiles are disabled. */
   codemode?: SubagentCodemode;
   /** Whether its children connect the servers in `mcp.json`. Omitted profiles do not. */
   mcp?: SubagentMcp;
@@ -451,7 +451,7 @@ function profileDirectories(cwd: string): Array<[string, Exclude<SubagentScope, 
   return [
     [join(getAgentDir(), "agents"), "global"],
     [join(resolve(cwd), ".agents", "agents"), "workspace"],
-    [join(resolve(cwd), ".pi", "agents"), "project"],
+    [join(resolve(cwd), ".workagent", "agents"), "project"],
   ];
 }
 
@@ -502,7 +502,7 @@ function assertProfileName(name: string): string {
 
 function writableProfileDirectory(cwd: string, scope: SubagentWritableScope): string {
   if (scope === "global") return join(getAgentDir(), "agents");
-  if (scope === "project") return join(resolve(cwd), ".pi", "agents");
+  if (scope === "project") return join(resolve(cwd), ".workagent", "agents");
   throw new Error("Agent scope must be global or project");
 }
 

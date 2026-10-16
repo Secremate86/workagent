@@ -4,6 +4,9 @@ import type { SkillInstallScope } from "@/lib/api-types";
 import { buildSkillUpdateArgs } from "@/lib/skill-updates";
 import { loadSkillsWithInstallInfo } from "@/lib/skills-service";
 import { getAllowedFileRoots, isExistingFilePathAllowed } from "@/lib/file-access";
+import { getAgentDir } from "@earendil-works/pi-coding-agent";
+import { getGlobalSkillsLockPath } from "@/lib/skill-lock";
+import { installWorkAgentSkills } from "@/lib/workagent-skill-install";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +41,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "This skill cannot be updated automatically" }, { status: 400 });
     }
 
-    const { stdout, stderr } = await runNpx(buildSkillUpdateArgs(skill.install), {
-      timeout: 60_000,
-      cwd: scope === "project" ? cwd : undefined,
-      env: { ...process.env, FORCE_COLOR: "0" },
+    const { stdout, stderr } = await installWorkAgentSkills({
+      args: buildSkillUpdateArgs(skill.install), scope, cwd, agentDir: getAgentDir(), globalLockPath: getGlobalSkillsLockPath(), skillNames: [skill.name],
+      runCli: (stagedArgs, stageCwd) => runNpx(stagedArgs, { timeout: 60_000, cwd: stageCwd, env: { ...process.env, FORCE_COLOR: "0" } }),
     });
 
     const refreshed = await loadSkillsWithInstallInfo(cwd);

@@ -132,9 +132,9 @@ test("bulk enable restores disabled packages and keeps a filtered one's filters"
 test("bulk toggles refuse an untrusted project's packages without stopping global ones", async () => {
   const alpha = await makePackage("bulk-alpha");
   const untrusted = join(root, "untrusted-project");
-  await mkdir(join(untrusted, ".pi"), { recursive: true });
+  await mkdir(join(untrusted, ".workagent"), { recursive: true });
   const projectSettings = JSON.stringify({ packages: ["npm:project-only"] });
-  await writeFile(join(untrusted, ".pi", "settings.json"), projectSettings);
+  await writeFile(join(untrusted, ".workagent", "settings.json"), projectSettings);
   allowFileRoot(untrusted);
   await writeFile(settingsPath, JSON.stringify({ packages: [alpha] }));
 
@@ -148,7 +148,7 @@ test("bulk toggles refuse an untrusted project's packages without stopping globa
   assert.equal(body.results[0].error, undefined);
   assert.match(body.results[1].error, /must be trusted/);
   assert.deepEqual(await readPackages(), [{ source: alpha, ...off }]);
-  assert.equal(await readFile(join(untrusted, ".pi", "settings.json"), "utf8"), projectSettings);
+  assert.equal(await readFile(join(untrusted, ".workagent", "settings.json"), "utf8"), projectSettings);
 });
 
 test("bulk toggles report a settings file the SDK could not load instead of success", async () => {

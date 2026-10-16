@@ -1,9 +1,13 @@
 import type { NextConfig } from "next";
+import "./scripts/workagent-sdk-hooks.mjs";
+import { prepareWorkAgentPaths } from "./scripts/workagent-paths.mjs";
 import { readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const configDir = dirname(fileURLToPath(import.meta.url));
+const { agentDir } = prepareWorkAgentPaths(configDir);
+if (!process.env.PI_CODING_AGENT_DIR) process.env.PI_CODING_AGENT_DIR = agentDir;
 const { version } = JSON.parse(readFileSync(join(configDir, "package.json"), "utf8")) as { version: string };
 let piVersion = "unknown";
 try {
@@ -17,8 +21,12 @@ try {
 const gfmAutolinkEmailLoader = join(configDir, "lib/gfm-autolink-email-loader.cjs");
 
 const nextConfig: NextConfig = {
+  agentRules: false,
+  devIndicators: false,
   outputFileTracingRoot: configDir,
   experimental: {
+    webpackMemoryOptimizations: true,
+    webpackBuildWorker: true,
     // proxy.ts matches /api/:path*, and Next buffers the request body whenever
     // a proxy is present, capped at 10 MB by default. The upload route accepts
     // up to 100 MB per request, so raise the buffer above that or large uploads
@@ -34,7 +42,27 @@ const nextConfig: NextConfig = {
       "**/mdast-util-gfm-autolink-literal/lib/index.js": { loaders: [gfmAutolinkEmailLoader] },
     },
   },
-  webpack(config) {
+  webpack(config, { isServer, webpack }) {
+    // Docker builds do not reuse .next between source revisions. Avoid retaining
+    // and serializing the large diagram/language graph after compilation.
+    config.cache = false;
+    if (process.env.WORKAGENT_BUILD_PROGRESS === "1") {
+      let previous = -1;
+      config.plugins.push(new webpack.ProgressPlugin((fraction: number, stage: string) => {
+        const step = Math.floor(fraction * 20);
+        if (step !== previous) {
+          previous = step;
+          console.log(`[WorkAgent ${isServer ? "server" : "client"}] ${Math.round(fraction * 100)}% ${stage}`);
+        }
+      }));
+    }
+    // Use the installed package's prebundled browser distribution, retaining
+    // all diagrams and the transpilation required by supported browsers.
+    config.resolve.alias["mermaid$"] = join(configDir, "node_modules/mermaid/dist/mermaid.esm.min.mjs");
+    // These browser diagrams are loaded inside effects. Keep the Node SSR
+    // compilation from duplicating Mermaid's complete diagram graph.
+    // Client transpilation below remains enabled for supported browsers.
+    if (isServer) config.externals.push({ mermaid: "commonjs mermaid" });
     config.module.rules.push({
       test: /[\\/]mdast-util-gfm-autolink-literal[\\/]lib[\\/]index\.js$/,
       loader: gfmAutolinkEmailLoader,
@@ -45,6 +73,10 @@ const nextConfig: NextConfig = {
   // lazy diagram chunks are full of class `static {}` blocks (#753).
   transpilePackages: ["mermaid", "@mermaid-js/parser"],
   serverExternalPackages: [
+    "react-syntax-highlighter",
+    "jiti",
+    "pi-memory",
+    "pi-routines",
     "node-pty",
     "undici",
     "web-push",

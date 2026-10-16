@@ -112,7 +112,7 @@ test("before Add the pane shows what would be written: the target as written, na
   assert.match(shown, /env\.HOOK: \$ and a leading ! were escaped/);
   assert.match(shown, /Enable pi mcp syntax \(\$NAME, !command\)/, "a JSON paste offers the pi-config toggle");
   // Off, the label says it all; on, the line under it says what runs.
-  assert.doesNotMatch(shown, /reads a variable on the computer running Pi Web/);
+  assert.doesNotMatch(shown, /reads a variable on the computer running WorkAgent/);
   // A paste replaces the examples, and the preview leaves out what is not set.
   assert.doesNotMatch(decode(html), /config-add-source-examples/);
   assert.doesNotMatch(preview, /Working directory/);
@@ -120,7 +120,7 @@ test("before Add the pane shows what would be written: the target as written, na
   assert.doesNotMatch(addButton(html).tag, /disabled/);
 
   const raw = text(pane({ draft: { text: paste, rawPi: true } }));
-  assert.match(raw, /In env and header values, \$NAME reads a variable on the computer running Pi Web/);
+  assert.match(raw, /In env and header values, \$NAME reads a variable on the computer running WorkAgent/);
   assert.match(raw, /Shell commands Runs a shell command on every connection: env HOOK/);
 });
 
@@ -149,18 +149,18 @@ test("why Project is unavailable is visible text under the switch, never only a 
   let html = decode(pane({ data: overview({ cwd: "/Users/me/repo", trust: fresh, trustFolder: { allowed: false, reason: "trust-too-broad", breadth } }), draft: { text: "npx x" } }));
   const reason = html.match(/<span id="([^"]+)" class="config-scope-switch-reason">([^<]*)<\/span>/);
   assert.ok(reason, "the reason is rendered");
-  assert.match(reason[2], /This folder holds .*repo\/app, another folder Pi Web knows/);
+  assert.match(reason[2], /This folder holds .*repo\/app, another folder WorkAgent knows/);
   assert.match(html, new RegExp(`aria-describedby="${reason[1]}" disabled="" class="config-scope-switch-option">project`));
 
   // A fresh folder with a link to nothing under .pi, which the step refuses.
   html = pane({ data: overview({ cwd: "/Users/me/repo", trust: fresh, trustFolder: { allowed: false, reason: "folder-not-fresh" } }), draft: { text: "npx x" } });
-  assert.match(text(html), /is a link to nothing\. It would need trust once its target appears, so Pi Web does not trust the folder by itself\./);
+  assert.match(text(html), /is a link to nothing\. It would need trust once its target appears, so WorkAgent does not trust the folder by itself\./);
 
   // A literal secret, with the way out: read it from a host variable, with the control that does it.
   const secret = JSON.stringify({ mcpServers: { api: { url: "https://api.example.com/mcp", headers: { Authorization: "Bearer sk-live-0123456789abcdef0123" } } } });
   html = pane({ draft: { text: secret } });
-  assert.match(text(html), /headers\.Authorization holds a secret as plain text, so this server can be saved only globally\. To save it in the project, choose “Read it from a variable of the computer running Pi Web” for it\./);
-  assert.match(text(html), /Secrets in the paste headers\.Authorization holds a secret as plain text\. Read it from a variable of the computer running Pi Web Saved in mcp\.json as pasted/);
+  assert.match(text(html), /headers\.Authorization holds a secret as plain text, so this server can be saved only globally\. To save it in the project, choose “Read it from a variable of the computer running WorkAgent” for it\./);
+  assert.match(text(html), /Secrets in the paste headers\.Authorization holds a secret as plain text\. Read it from a variable of the computer running WorkAgent Saved in mcp\.json as pasted/);
   assert.doesNotMatch(text(html), /headers\.Authorization holds a secret as plain text, so the server can be saved only in the global mcp\.json/, "the importer's note gives way to the row that says it");
   assert.ok(!html.replace(/<textarea[\s\S]*?<\/textarea>/, "").includes("sk-live"), "the secret itself is shown only in the box it was pasted into");
   // Picked while available and blocked since: the pane's own line, which Add points at.
@@ -178,7 +178,7 @@ test("why Project is unavailable is visible text under the switch, never only a 
     draft: { text: "npx x" },
     onTrustProject: noop,
   });
-  assert.match(text(html), /This project is not trusted, so Pi Web does not write its \.pi\/mcp\.json\. Trust it first\./);
+  assert.match(text(html), /This project is not trusted, so WorkAgent does not write its \.pi\/mcp\.json\. Trust it first\./);
   // The way to make Project available sits under its reason, in the save target.
   assert.match(decode(html), /<div class="config-save-target">[\s\S]*?class="config-scope-switch-reason">This project is not trusted[^<]*<\/span><\/div><span class="mcp-config-line"><button[^>]*>Trust project…<\/button><\/span><\/div>/);
 });
@@ -204,13 +204,13 @@ test("a password field takes a host variable instead, and the name field says wh
   assert.match(html, /<input class="mcp-add-input" type="password" aria-label="pat" autoComplete="off" placeholder="\$\{input:pat\}"[^>]*value=""\/>/);
   assert.match(text(html), /GitHub personal access token/);
   assert.match(text(html), /Stored as Bearer ‹your value›\./);
-  assert.match(text(html), /Read it from a variable of the computer running Pi Web/);
+  assert.match(text(html), /Read it from a variable of the computer running WorkAgent/);
   assert.match(text(html), /Fill in pat first\./);
   html = decode(pane({ draft: { text: paste, references: { "input.pat": "GH_TOKEN" } } }));
   assert.match(html, /aria-label="Variable for pat"[^>]*value="GH_TOKEN"\/>/);
   assert.match(text(html), /Stored as Bearer \$\{GH_TOKEN\}: pi reads the variable each time it connects/);
   // The preview then says the header sends that variable.
-  assert.match(text(html), /Host variables Sends environment variables of the computer running Pi Web to this server on every connection: GH_TOKEN in header Authorization/);
+  assert.match(text(html), /Host variables Sends environment variables of the computer running WorkAgent to this server on every connection: GH_TOKEN in header Authorization/);
   assert.doesNotMatch(addButton(html).tag, /disabled/);
 
   html = pane({ data: overview(undefined, { servers: [{ name: "gh", scope: "global" }] }), draft: { text: paste, references: { "input.pat": "GH_TOKEN" } } });
@@ -285,8 +285,8 @@ test("a refused Add says why; host variables are added only through an explicit 
     failure: { error: "x", reason: "host-env-confirm", names: ["GH_TOKEN"] },
   });
   assert.match(decode(html), /<div role="alert" class="mcp-add-failure">/);
-  assert.match(text(html), /Not added: The server would be sent variables of the computer running Pi Web; confirm that first\./);
-  assert.match(text(html), /read GH_TOKEN, which are set on the computer running Pi Web/);
+  assert.match(text(html), /Not added: The server would be sent variables of the computer running WorkAgent; confirm that first\./);
+  assert.match(text(html), /read GH_TOKEN, which are set on the computer running WorkAgent/);
   assert.match(text(html), /Add and send these values/);
 
   html = pane({ draft: { text: "npx x", scope: "project" }, failure: { error: "x", reason: "trust-too-broad", breadth: { kind: "contains-agent-dir", path: "/Users/me/.pi/agent" } } });
@@ -294,13 +294,13 @@ test("a refused Add says why; host variables are added only through an explicit 
   html = pane({ draft: { text: "{" }, failure: { error: "x", reason: "import-failed", notes: [{ code: "invalid-json", params: { detail: "Unexpected end" } }] } });
   assert.match(text(html), /This looks like JSON but does not parse: Unexpected end/);
   html = pane({ draft: { text: "x" }, failure: { error: "x", timedOut: true } });
-  assert.match(text(html), /Not added: Pi Web did not answer in time/);
+  assert.match(text(html), /Not added: WorkAgent did not answer in time/);
   // The write failed after trusting, and the trust could not be taken back: said in words, not only in the diagnostic.
   html = pane({
     draft: { text: "npx x", scope: "project" },
     failure: { error: "x; the folder stays trusted", reason: "locked", trustKept: true, trust: { requiresTrust: false, trusted: true, decision: true, decisionPath: "/Users/me/repo", inherited: false } },
   });
-  assert.match(text(html), /Not added: .* Pi Web trusted ~?\/?.*repo for this step and could not take that back, so the folder stays trusted\./);
+  assert.match(text(html), /Not added: .* WorkAgent trusted ~?\/?.*repo for this step and could not take that back, so the folder stays trusted\./);
   assert.doesNotMatch(text(html), /the folder stays trusted$/m, "not the English diagnostic");
 
   // Refusals worded as an Add's, not as the switch's, Test's or a session's.
@@ -308,7 +308,7 @@ test("a refused Add says why; host variables are added only through an explicit 
   assert.match(text(html), /Not added: pi refuses it as filled in: server "server": url must be an http or https URL/);
   assert.doesNotMatch(text(html), /does not connect it/);
   html = pane({ draft: { text: "https://api.example.com/mcp" }, failure: { error: "x", reason: "web-password", name: "server" } });
-  assert.match(text(html), /Not added: It references PI_WEB_PASSWORD, so Pi Web does not add it\./);
+  assert.match(text(html), /Not added: It references PI_WEB_PASSWORD, so WorkAgent does not add it\./);
 });
 
 test("Settings › MCP opens the add pane from the sidebar, keeps the draft, and says what Add wrote", () => {

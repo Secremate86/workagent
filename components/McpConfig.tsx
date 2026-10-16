@@ -275,7 +275,7 @@ function pressedButton(): HTMLButtonElement | HTMLSelectElement | null {
 
 /**
  * Settings › MCP: the servers of the global `mcp.json` and, with a project,
- * its `.pi/mcp.json`, from `GET /api/mcp`, which reads the files and nothing
+ * its `.workagent/mcp.json`, from `GET /api/mcp`, which reads the files and nothing
  * else: no server is started or contacted to show this. Works without a
  * project; the Project group appears only with one. A server can be switched
  * on or off, a whole group at once, and removed with 60 seconds to undo,
@@ -307,7 +307,7 @@ export function McpConfig({
   trust?: ProjectTrustStatus | null;
   /** Opens the page's trust dialog for `cwd`; without it the trust notice has no button. */
   onTrustProject?: () => void;
-  /** Hands the page `cwd`'s trust after an Add wrote to its `.pi/mcp.json` (and maybe trusted it). */
+  /** Hands the page `cwd`'s trust after an Add wrote to its `.workagent/mcp.json` (and maybe trusted it). */
   onProjectTrustChanged?: (cwd: string, status: ProjectTrustStatus) => void;
 }) {
   const [load, setLoad] = useState<McpConfigLoad>({ state: "loading" });
@@ -601,7 +601,7 @@ export function McpConfig({
     setFocusBack({ control: pressed });
   }, [runAction]);
 
-  // A global server on or off in this project alone: an override in its .pi/mcp.json, like a switch.
+  // A global server on or off in this project alone: an override in its .workagent/mcp.json, like a switch.
   const switchServerInProject = useCallback(async (server: McpServerInfo, enabled: boolean) => {
     const key = mcpServerKey(server);
     const pressed = pressedButton();
@@ -1168,7 +1168,7 @@ export function McpConfigView({
             ) : (
               <ConfigEmptyState>
                 {emptyKey === "mcp.empty"
-                  ? t(emptyKey, { globalPath: displayPath(globalFile?.path ?? "~/.pi/agent/mcp.json") })
+                  ? t(emptyKey, { globalPath: displayPath(globalFile?.path ?? "~/.workagent/agent/mcp.json") })
                   : t(emptyKey)}
               </ConfigEmptyState>
             )}
@@ -1209,7 +1209,7 @@ export function McpConfigView({
  * What the last Add wrote, above the list: the server and its file, the folder
  * it trusted in the same step, the test that follows, and Sign in when that
  * test found the server asks for one. A project file is named from the
- * panel's folder (`./.pi/mcp.json`), which the subtitle shows, and that folder
+ * panel's folder (`./.workagent/mcp.json`), which the subtitle shows, and that folder
  * as "this folder", as the Add button named it: two absolute paths took a
  * quarter of a phone screen. The detail pane's File row keeps the full path.
  */

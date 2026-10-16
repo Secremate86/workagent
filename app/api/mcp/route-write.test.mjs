@@ -18,7 +18,7 @@ const previousDisable = process.env.PI_WEB_DISABLE_MCP;
 process.env.PI_CODING_AGENT_DIR = agentDir;
 delete process.env.PI_WEB_DISABLE_MCP;
 await mkdir(agentDir, { recursive: true });
-await mkdir(join(cwd, ".pi"), { recursive: true });
+await mkdir(join(cwd, ".workagent"), { recursive: true });
 await mkdir(outside, { recursive: true });
 
 const jiti = createJiti(import.meta.url, { alias: { "@": process.cwd() } });
@@ -35,7 +35,7 @@ after(async () => {
 });
 
 const globalPath = join(agentDir, "mcp.json");
-const projectPath = join(cwd, ".pi", "mcp.json");
+const projectPath = join(cwd, ".workagent", "mcp.json");
 const store = new ProjectTrustStore(agentDir);
 const SECRET = "literal-header-secret-value";
 

@@ -1,0 +1,12 @@
+[project]
+name = "workagent-office-worker"
+version = "0.1.0"
+description = "Deterministic local office document worker for WorkAgent"
+requires-python = ">=3.12"
+dependencies = [
+    "openpyxl>=3.1.5,<4",
+    "python-docx>=1.1.2,<2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["workers/office/tests"]

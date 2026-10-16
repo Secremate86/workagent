@@ -439,8 +439,8 @@ function AddSkillPanel({
 
   const installPath =
     scope === "global"
-      ? "~/.pi/agent/skills/"
-      : `${shortenPath(cwd)}/.pi/skills/`;
+      ? "~/.agents/skills/"
+      : `${shortenPath(cwd)}/.agents/skills/`;
 
   return (
     <ConfigDetailStack className="is-full-height">

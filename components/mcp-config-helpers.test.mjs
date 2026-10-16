@@ -133,7 +133,7 @@ test("a row's state follows the file, the most important reason first", () => {
   assert.equal(mcpServerRowState(server(), on), "on");
   // pi refuses the entry: nothing else about it matters.
   assert.equal(mcpServerRowState(server({ invalidError: "bad", enabled: false, webPasswordField: { kind: "header", name: "X" } }), on), "invalid");
-  // Pi Web refuses it even while turned off, since turning it on would be refused too.
+  // WorkAgent refuses it even while turned off, since turning it on would be refused too.
   assert.equal(mcpServerRowState(server({ enabled: false, webPasswordField: { kind: "header", name: "X" } }), on), "web-password");
   assert.equal(mcpServerRowState(server({ enabled: false }), { mcpAvailable: false, projectServersLoad: false }), "disabled");
   // A project entry connects only where the project's file is read.

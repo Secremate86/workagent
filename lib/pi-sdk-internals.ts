@@ -369,7 +369,7 @@ export async function importPiSdkInternals(options: {
   // PI_PACKAGE_DIR moves getPackageDir() away from the SDK this process
   // loaded, so file URLs would load a second copy.
   if (environment.PI_PACKAGE_DIR) {
-    return { ok: false, reason: `PI_PACKAGE_DIR is set; MCP support loads only from the ${SDK_PACKAGE} that Pi Web runs` };
+    return { ok: false, reason: `PI_PACKAGE_DIR is set; MCP support loads only from the ${SDK_PACKAGE} that WorkAgent runs` };
   }
 
   let packageDir: string;
@@ -377,7 +377,7 @@ export async function importPiSdkInternals(options: {
     packageDir = realpathSync(getPackageDir());
     const resolvedDir = resolvedSdkPackageDir(cwd);
     if (!sameRealPath(packageDir, resolvedDir)) {
-      return { ok: false, reason: `${SDK_PACKAGE} at ${packageDir} is not the package Pi Web resolves (${resolvedDir})` };
+      return { ok: false, reason: `${SDK_PACKAGE} at ${packageDir} is not the package WorkAgent resolves (${resolvedDir})` };
     }
   } catch (error) {
     return { ok: false, reason: `cannot locate ${SDK_PACKAGE}: ${errorMessage(error)}` };

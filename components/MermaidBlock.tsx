@@ -262,13 +262,13 @@ interface CodeBlockProps {
 // Prism's light theme uses backgroundColor, while its dark theme uses the
 // background shorthand. Keep the pre background solely in customStyle so a
 // theme switch cannot remove/update one and reset the other in React's diff.
-const codeBlockDarkTheme = {
+const codeBlockDarkTheme: typeof vscDarkPlus = {
   ...vscDarkPlus,
   'pre[class*="language-"]': {
     ...vscDarkPlus['pre[class*="language-"]'],
   },
 };
-delete codeBlockDarkTheme['pre[class*="language-"]'].background;
+delete (codeBlockDarkTheme['pre[class*="language-"]'] as { background?: string }).background;
 
 /**
  * Syntax-highlighted code block with copy button.

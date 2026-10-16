@@ -10,6 +10,7 @@ interface SkillLockEntry {
   ref?: unknown;
   skillFolderHash?: unknown;
   computedHash?: unknown;
+  workagentHashKind?: unknown;
 }
 
 interface SkillLockFile {
@@ -95,13 +96,14 @@ function getInstallInfo(
   if (!source) return undefined;
   const skillPath = typeof entry.skillPath === "string" ? entry.skillPath : undefined;
   const ref = typeof entry.ref === "string" ? entry.ref : undefined;
-  const rawVersionHash = scope === "global" ? entry.skillFolderHash : entry.computedHash;
+  const snapshot = entry.workagentHashKind === "snapshot";
+  const rawVersionHash = scope === "global" && !snapshot ? entry.skillFolderHash : entry.computedHash;
   const versionHash = typeof rawVersionHash === "string" && rawVersionHash
     ? rawVersionHash
     : undefined;
   const isGitHubSource =
     sourceType === "github" && /^[\w.-]+\/[\w.-]+$/.test(source);
-  const hasComparableVersion = scope === "global" || !ref;
+  const hasComparableVersion = (scope === "global" && !snapshot) || !ref;
 
   return {
     package: `${source}@${skillName}`,
@@ -112,6 +114,7 @@ function getInstallInfo(
     ...(skillPath && { skillPath }),
     ...(ref && { ref }),
     ...(versionHash && { versionHash }),
+    ...(snapshot && { versionHashKind: "snapshot" as const }),
     canCheckForUpdates: Boolean(
       isGitHubSource && skillPath && versionHash && hasComparableVersion,
     ),
@@ -130,7 +133,7 @@ export function annotateSkillsWithInstallInfo(
   const globalEntries = readSkillLock(globalLockPath);
   const projectEntries = readSkillLock(projectLockPath);
   const globalSkillsRoot = join(agentDir, "skills");
-  const projectSkillsRoot = join(cwd, ".pi", "skills");
+  const projectSkillsRoot = join(cwd, ".workagent", "skills");
 
   return skills.map((skill) => {
     if (!existsSync(skill.filePath)) return skill;

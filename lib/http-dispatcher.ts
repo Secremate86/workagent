@@ -37,7 +37,7 @@ function parseHttpIdleTimeoutMs(value: unknown): number | undefined {
  */
 export function defaultAgentDir(): string {
   let configured = process.env.PI_CODING_AGENT_DIR;
-  if (!configured) return join(homedir(), ".pi", "agent");
+  if (!configured) return join(homedir(), ".workagent", "agent");
 
   // pi's normalizePath(): Git Bash, MSYS, Cygwin and WSL drive paths on
   // Windows, then `~`, then file: URLs. The value is not trimmed.
@@ -63,7 +63,7 @@ function windowsShellPath(path: string): string {
  * session gets the HTTP idle timeout the user configured instead of the
  * built-in default. Only the global file counts: the dispatcher is configured
  * once at startup, before any project is selected, so a project's
- * `.pi/settings.json` cannot apply here.
+ * `.workagent/settings.json` cannot apply here.
  *
  * A missing file, a file that does not parse, an absent key, or a value the CLI
  * would reject yields `undefined`, which leaves `configureHttpDispatcher`'s own

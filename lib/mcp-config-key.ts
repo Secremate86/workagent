@@ -14,7 +14,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /**
  * How deep `canonicalJson()` follows arrays and objects. Real entries are a
  * few levels deep; the entries hashed include an untrusted repository's
- * `.pi/mcp.json`, which `JSON.parse` accepts hundreds of thousands of levels
+ * `.workagent/mcp.json`, which `JSON.parse` accepts hundreds of thousands of levels
  * deep, and one recursion per level would overflow the stack at a few
  * thousand.
  */

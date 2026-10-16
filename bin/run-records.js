@@ -18,7 +18,7 @@ const { fileURLToPath } = require("url");
 // pi's getAgentDir(): PI_CODING_AGENT_DIR with `~` expanded, else ~/.pi/agent.
 function getAgentDir(env = process.env, home = os.homedir()) {
   const configured = env.PI_CODING_AGENT_DIR;
-  if (!configured) return path.join(home, ".pi", "agent");
+  if (!configured) return path.join(home, ".workagent", "agent");
   if (configured === "~") return home;
   if (configured.startsWith("~/") || configured.startsWith("~\\")) return path.join(home, configured.slice(2));
   if (configured.startsWith("file://")) return fileURLToPath(configured);

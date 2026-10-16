@@ -469,8 +469,11 @@ function splitAutolinkLiteral(
   const textNode = node.children[0];
   if (textNode.type !== "text") return;
 
-  const start = node.position?.start;
-  const end = node.position?.end;
+  // mdast nodes carry unist positions at runtime, although the installed
+  // mdast declarations in this workspace omit the inherited property.
+  const positionedNode = node as Link & { position?: SourcePosition };
+  const start = positionedNode.position?.start;
+  const end = positionedNode.position?.end;
   if (start?.offset == null || end?.offset == null) return;
   if (source.slice(start.offset, end.offset) !== textNode.value) return;
 
@@ -484,12 +487,18 @@ function splitAutolinkLiteral(
   // The url carries a `http://` (www.) or `mailto:` prefix the text does not.
   node.url = node.url.slice(0, node.url.length - text.length) + head;
   textNode.value = head;
-  node.position = { start, end: boundary };
+  positionedNode.position = { start, end: boundary };
   siblings.splice(index + 1, 0, {
     type: "text",
     value: text.slice(cut),
     position: { start: boundary, end },
-  });
+  } as Content);
+}
+
+/** The unist source span attached to parser-created mdast nodes. */
+interface SourcePosition {
+  start: { line: number; column: number; offset?: number };
+  end: { line: number; column: number; offset?: number };
 }
 
 function remarkSplitAutolinkLiterals() {

@@ -1,0 +1,6 @@
+allowBuilds:
+  '@google/genai': true
+  node-pty: true
+  pi-memory: true
+  protobufjs: true
+  unrs-resolver: true

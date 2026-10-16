@@ -32,7 +32,7 @@ import { mayReadProjectConfigNow } from "./project-trust";
 
 export { canonicalJson };
 
-// Pi Web decides which MCP servers a session connects (ADR 0006). The SDK's
+// WorkAgent decides which MCP servers a session connects (ADR 0006). The SDK's
 // MCP extension is created with a `loadConfig` that returns no servers; this
 // host reads `mcp.json` itself and hands the servers it wants to the extension
 // through `pi.registerMcpServer()`:
@@ -131,7 +131,7 @@ const PROJECT_CONFIG_MAX_BYTES = 1024 * 1024;
 const NAMES_OPEN_FLAGS = constants.O_RDONLY | (constants.O_NONBLOCK || 0) | (constants.O_NOFOLLOW || 0);
 
 /**
- * The entries an untrusted project's `.pi/mcp.json` declares, so the host can
+ * The entries an untrusted project's `.workagent/mcp.json` declares, so the host can
  * report why they do not connect: each name with its raw value, which is only
  * hashed into the key its status is recorded under (`mcpConfigKey()`), never
  * validated, resolved, or run. The file is repository-controlled and read
@@ -283,7 +283,7 @@ function errorName(error: unknown): string | undefined {
  * up (`McpOAuthAuthorizationRequiredError`), or an OAuth server still answered
  * 401 (`McpAuthRequiredError`). A server with an `Authorization` header gets
  * no auth provider, and its 401 is a failure. Told by name: neither class is
- * among the SDK modules Pi Web loads, and a second module copy would defeat
+ * among the SDK modules WorkAgent loads, and a second module copy would defeat
  * `instanceof` anyway.
  */
 function asksForSignIn(error: unknown, usesOAuth: boolean): boolean {
@@ -377,7 +377,7 @@ export type McpHostServerState =
   | "disconnected"
   /** Another extension registered the name first (`conflict` names it), or the extension refused the config. */
   | "not-registered"
-  /** The project's `.pi/mcp.json` declares it, but the project is not trusted, so it is not read. */
+  /** The project's `.workagent/mcp.json` declares it, but the project is not trusted, so it is not read. */
   | "not-trusted";
 
 export interface McpHostServerStatus {
@@ -860,10 +860,10 @@ class HostInstance {
     this.problems = new Map();
     const desired = new Map<string, DesiredServer>();
     // Project entries follow the project's trust, as in the pi CLI: the SDK reads
-    // `.pi/mcp.json` only once the project is trusted (ADR 0006). Trust is read
+    // `.workagent/mcp.json` only once the project is trusted (ADR 0006). Trust is read
     // fresh here, never from ctx.isProjectTrusted(): that is the wrapper's
     // SettingsManager flag, fixed when the wrapper was built (true for a folder that
-    // needed no trust then) and refreshed only on reload, so a `.pi/mcp.json` that
+    // needed no trust then) and refreshed only on reload, so a `.workagent/mcp.json` that
     // appeared since would connect on the next prompt with no trust decision. The
     // default read also answers false for a folder that needs no trust: the SDK
     // reads the file again itself, and a file landing between the two reads would
@@ -1011,7 +1011,7 @@ export interface McpHostOptions {
   /** Whether codemode can run scripts; servers it cannot reach become `deferred`. */
   codemodeAvailable: () => boolean;
   /**
-   * Whether the project's `.pi/mcp.json` may be read, asked on every sync.
+   * Whether the project's `.workagent/mcp.json` may be read, asked on every sync.
    * Defaults to a fresh read of the folder and `trust.json`
    * (`mayReadProjectConfigNow()`): true only while a decision trusts a folder
    * that requires trust. While it is false, the names the file declares are
@@ -1059,7 +1059,7 @@ export class McpHost {
       const host = this.current;
       const attempt = host?.attemptFor(entry);
       if (!attempt && host?.refuseAbandoned(entry)) {
-        throw new Error(`MCP server "${entry.name}" was removed before it connected, so Pi Web did not start it`);
+        throw new Error(`MCP server "${entry.name}" was removed before it connected, so WorkAgent did not start it`);
       }
       let transport: ReturnType<McpTransportFactory>;
       try {

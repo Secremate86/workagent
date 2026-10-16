@@ -39,6 +39,7 @@ import { projectTrustReloadOptions } from "./project-trust";
 import { createSubagentCodemodeExtension, createSubagentMcpExtensions } from "./builtin-extensions";
 import type { McpHost } from "./mcp-host";
 import { createSubagentMcpPolicyExtension } from "./mcp-read-only-policy";
+import { createWorkAgentPolicyExtension } from "./workagent/policy";
 import { resolveShellTools } from "./powershell-settings";
 import { isBuiltInSubagentsEnabled, readSubagentSettings } from "./subagent-settings";
 import { SubagentQueue } from "./subagent-queue";
@@ -67,6 +68,7 @@ export interface SubagentRuntimeDependencies {
     options?: { exactSystemPrompt?: () => string; chatOnly?: boolean; mcpHost?: McpHost },
   ): HostSession | void;
   reopenSession(sessionId: string, sessionFile: string): Promise<HostSession>;
+  ensureSessionPolicy?(sessionId: string, wrapper: HostSession): Promise<HostSession>;
   resolveSessionPath(sessionId: string): Promise<string | null>;
   invalidateSessionList(): void;
   isBuiltInSubagentsEnabled?(): boolean;
@@ -265,7 +267,7 @@ export function createSubagentController(
 ): SubagentController {
   async function start(request: StartSubagentRequest): Promise<SubagentExecution> {
     const enabled = dependencies.isBuiltInSubagentsEnabled ?? isBuiltInSubagentsEnabled;
-    if (!enabled()) throw new Error("Pi Web built-in sub-agents are disabled");
+    if (!enabled()) throw new Error("WorkAgent built-in sub-agents are disabled");
     const parentSessionId = request.parentContext.sessionManager.getSessionId();
     const parent = dependencies.getSession(parentSessionId);
     if (!parent?.isAlive()) throw new Error("Parent session is no longer available");
@@ -340,6 +342,7 @@ export function createSubagentController(
           })
         : undefined;
       const extensionFactories = [
+        createWorkAgentPolicyExtension(agentDir),
         ...(codemodeExtension ? [codemodeExtension] : []),
         ...(mcp ? [...mcp.extensions, createSubagentMcpPolicyExtension(() => mcpScope)] : []),
         ...(skillsBinding.loaderOptions.extensionFactories ?? []),
@@ -640,7 +643,7 @@ export function createSubagentController(
 
   async function resume(request: ResumeSubagentRequest): Promise<SubagentExecution> {
     const enabled = dependencies.isBuiltInSubagentsEnabled ?? isBuiltInSubagentsEnabled;
-    if (!enabled()) throw new Error("Pi Web built-in sub-agents are disabled");
+    if (!enabled()) throw new Error("WorkAgent built-in sub-agents are disabled");
     const parentSessionId = request.parentContext.sessionManager.getSessionId();
     const existing = await get(request.sessionId);
     if (!existing) throw new Error(`Subagent not found: ${request.sessionId}`);
@@ -651,6 +654,9 @@ export function createSubagentController(
     const sessionPath = existing.sessionPath || await dependencies.resolveSessionPath(request.sessionId);
     if (!sessionPath) throw new Error(`Subagent session file not found: ${request.sessionId}`);
     let wrapper = dependencies.getSession(request.sessionId);
+    if (wrapper?.isAlive() && dependencies.ensureSessionPolicy) {
+      wrapper = await dependencies.ensureSessionPolicy(request.sessionId, wrapper);
+    }
     if (!wrapper?.isAlive()) wrapper = await dependencies.reopenSession(request.sessionId, sessionPath);
     if (!wrapper.isAlive()) throw new Error("Subagent session is no longer available");
     if (wrapper.isRunning()) throw new Error("Subagent is already running");

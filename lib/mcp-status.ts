@@ -12,7 +12,7 @@ import { samePath } from "./paths";
 //
 // A record is keyed by the file and the name, never the name alone: a project
 // entry may share its name with a global one, and two projects each have
-// their own `.pi/mcp.json`. Each entry holds a record per `configKey`
+// their own `.workagent/mcp.json`. Each entry holds a record per `configKey`
 // (`mcpConfigKey()`, an HMAC of the entry's canonical JSON) it was recorded
 // for, and only the one for the entry as the file holds it now is shown: an
 // edited entry reads as untested instead of carrying the old entry's result.
@@ -187,7 +187,7 @@ function inactiveHosts(): Map<string, McpHostInactiveInfo> {
 }
 
 /**
- * Records that the session `sessionId` connects no server through Pi Web,
+ * Records that the session `sessionId` connects no server through WorkAgent,
  * because its `/mcp` command is another extension's. Kept while the session
  * is open: its host forgets it when the session ends, or starts again with
  * Pi's own `/mcp`.

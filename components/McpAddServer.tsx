@@ -193,7 +193,7 @@ export function McpAddServer({
   };
   const change = (patch: Partial<McpAddDraft>) => onDraftChange({ ...draft, ...patch });
   const targetFile = data.files.find((file) => file.scope === analysis.scope)?.path
-    ?? (analysis.scope === "project" && cwd ? `${cwd.replace(/[\\/]+$/, "")}/.pi/mcp.json` : "mcp.json");
+    ?? (analysis.scope === "project" && cwd ? `${cwd.replace(/[\\/]+$/, "")}/.workagent/mcp.json` : "mcp.json");
   // Why Add waits, under it. Project picked, then blocked (a secret typed since) is said here too:
   // the switch at the top explains only a disabled option, and the way out is often in the fields above Add.
   const ownBlockLine = submitBlock && (draft.text.trim() !== "" || submitBlock.kind === "mcp-off")
@@ -584,7 +584,7 @@ function storedValue(config: McpServerConfig, label: string): string | undefined
 /**
  * One of the paste's own literal secrets, in a value pi resolves (ADR 0006,
  * "Secrets typed in the panel"): saved as written it keeps the server global,
- * so it can be read from a variable of the computer running Pi Web instead,
+ * so it can be read from a variable of the computer running WorkAgent instead,
  * stored as `${NAME}` (after a header's `Bearer `), which lets the server go
  * to the project. Its box opens with the name the pane suggests. The secret
  * itself is never shown.

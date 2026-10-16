@@ -107,7 +107,7 @@ export interface EnabledModelsView {
   providers: EnabledModelsProviderView[];
   /** Which settings file the effective value comes from. */
   scope: "global" | "project";
-  /** That file's path, shortened for display, e.g. `~/.pi/agent/settings.json`. */
+  /** That file's path, shortened for display, e.g. `~/.workagent/agent/settings.json`. */
   settingsPath: string;
   /** False when project settings shadow the global value pi-web can write. */
   editable: boolean;

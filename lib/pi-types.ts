@@ -76,6 +76,7 @@ interface ResourceLoaderLike {
 }
 
 interface ExtensionRunnerLike {
+  getExtensionPaths?(): string[];
   getRegisteredCommands(): Array<{
     invocationName: string;
     description?: string;

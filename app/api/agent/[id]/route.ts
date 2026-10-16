@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveSessionPath } from "@/lib/session-reader";
-import { startRpcSession, getRpcSession, setRpcSessionTools } from "@/lib/rpc-manager";
+import { startRpcSession, getRpcSession, setRpcSessionTools, ensureWorkAgentPolicySession } from "@/lib/rpc-manager";
 
 // POST /api/agent/[id] - Send a command to an existing session
 export async function POST(
@@ -37,7 +37,11 @@ export async function POST(
       });
     }
     if (existing?.isAlive()) {
-      const result = await existing.send(body);
+      const policyExemptCommands = new Set(["get_state", "abort", "abort_bash", "extension_ui_response", "extension_ui_input"]);
+      const session = policyExemptCommands.has(body.type)
+        ? existing
+        : await ensureWorkAgentPolicySession(id, existing);
+      const result = await session.send(body);
       promptAccepted = body.type === "prompt";
       return NextResponse.json({ success: true, data: result });
     }
@@ -65,7 +69,7 @@ export async function POST(
       ...(commandType === "prompt" && !promptAccepted
         ? { code: "prompt_rejected", accepted: false }
         : {}),
-    }, { status: 500 });
+    }, { status: error && typeof error === "object" && "status" in error && typeof error.status === "number" ? error.status : 500 });
   }
 }
 

@@ -200,7 +200,7 @@ export interface EnabledModelsSettings {
   path: string;
 }
 
-/** `~/.pi/agent/settings.json` reads better in a banner than the full path. */
+/** `~/.workagent/agent/settings.json` reads better in a banner than the full path. */
 export function displaySettingsPath(path: string): string {
   const home = homedir();
   if (!home || !path.startsWith(home)) return path;
@@ -226,7 +226,7 @@ export function readEnabledModelsSettings(
     patterns: settingsManager.getEnabledModels(),
     scope,
     path: displaySettingsPath(scope === "project"
-      ? join(cwd, ".pi", "settings.json")
+      ? join(cwd, ".workagent", "settings.json")
       : join(agentDir, "settings.json")),
   };
 }

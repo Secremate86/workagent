@@ -81,13 +81,13 @@ const FILE_CODE_STYLE: CSSProperties = {
 // dark theme's shorthand is dropped, as CodeBlock does: a theme switch then never
 // makes React remove one beside the other (it warned, and the view lost its
 // background).
-const fileViewerDarkTheme = {
+const fileViewerDarkTheme: typeof vscDarkPlus = {
   ...vscDarkPlus,
   'pre[class*="language-"]': {
     ...vscDarkPlus['pre[class*="language-"]'],
   },
 };
-delete fileViewerDarkTheme['pre[class*="language-"]'].background;
+delete (fileViewerDarkTheme['pre[class*="language-"]'] as { background?: string }).background;
 
 // `lineHeight` is FILE_CODE_STYLE's 13px * 1.6, so both columns share one line
 // box; a code-font change must move it with fontSize.
@@ -1837,7 +1837,7 @@ function TextFileViewer({
                     ? resolveLocalFileHref(href, markdownDirectory, cwd ?? markdownDirectory)
                     : null;
                   if (!linkedFile || !onOpenFile) {
-                    // Like chat links: a web or app link must not replace Pi Web.
+                    // Like chat links: a web or app link must not replace WorkAgent.
                     return isExternalMarkdownHref(href)
                       ? <a href={href} {...props} target="_blank" rel="noopener noreferrer">{children}</a>
                       : <a href={href} {...props}>{children}</a>;

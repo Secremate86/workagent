@@ -53,7 +53,7 @@ type PluginScope = PluginPackageInfo["scope"];
 type PluginAction = "install" | "remove" | "update" | "disable" | "enable";
 type Translate = ReturnType<typeof useI18n>["t"];
 
-const PLUGIN_SOURCE_EXAMPLES = ["npm:@scope/pi-plugin", "git:https://github.com/user/repo", "/absolute/path/to/plugin"];
+const PLUGIN_SOURCE_EXAMPLES = ["npm:@scope/workagent-plugin", "git:https://github.com/user/repo", "/absolute/path/to/plugin"];
 
 function normalizePluginSourceInput(value: string): string {
   const match = value.trim().match(/^\$?\s*pi\s+install\s+(\S+)\s*$/);
@@ -133,8 +133,8 @@ function versionSummary(pkg: PluginPackageInfo, t: Translate): string {
 /** Where pi installs a package of this scope (`DefaultPackageManager`'s npm and git roots). */
 function installLocation(scope: PluginScope, cwd: string): string {
   return scope === "project"
-    ? `${shortenPath(cwd)}/.pi/{npm,git}`
-    : "~/.pi/agent/{npm,git}";
+    ? `${shortenPath(cwd)}/.workagent/{npm,git}`
+    : "~/.workagent/agent/{npm,git}";
 }
 
 function findInstalledPackage(
@@ -273,7 +273,7 @@ function AddPluginPanel({
       title={t("i18n.addPlugin")}
       catalogs={[{
         href: "https://pi.dev/packages",
-        label: "pi.dev/packages",
+        label: "Extension package registry",
         icon: (
           <svg width="28" height="28" viewBox="0 0 800 800" aria-hidden="true" focusable="false">
             <path

@@ -189,7 +189,7 @@ async function loadMcpRuntime(): Promise<McpRuntimeResult> {
 }
 
 /**
- * `loadConfig` for the SDK's MCP extension. Pi Web decides which servers a
+ * `loadConfig` for the SDK's MCP extension. WorkAgent decides which servers a
  * session connects and registers them itself, so the extension connects none
  * on `session_start`, and its startup wait, which ignores Stop, never arms.
  * The file-level `autoEnableCodemode` still comes from `mcp.json`, as in the

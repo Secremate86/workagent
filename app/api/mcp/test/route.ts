@@ -6,7 +6,7 @@ import { testMcpServer } from "@/lib/mcp-test";
 export const dynamic = "force-dynamic";
 
 // Settings › MCP's Test (ADR 0006): connects one server of the global
-// `mcp.json` or the panel's project `.pi/mcp.json` once, outside any session,
+// `mcp.json` or the panel's project `.workagent/mcp.json` once, outside any session,
 // and answers with what it found (`lib/mcp-test.ts`). It starts a process or
 // contacts a URL, and may run a `!command` value, so it re-checks everything
 // a session's start would (`readConnectableMcpEntry()`, shared with sign-in):

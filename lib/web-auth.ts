@@ -1,6 +1,6 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-export const PI_WEB_AUTH_USERNAME = "pi";
+export const PI_WEB_AUTH_USERNAME = "workagent";
 export const PI_WEB_SESSION_COOKIE = "pi_web_session";
 export const PI_WEB_SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
@@ -48,7 +48,8 @@ export function isValidBasicAuthorization(
 
   const username = credentials.slice(0, separator);
   const suppliedPassword = credentials.slice(separator + 1);
-  const usernameMatches = secretsEqual(username, PI_WEB_AUTH_USERNAME);
+  // Existing HTTP clients keep working while the product uses WorkAgent.
+  const usernameMatches = secretsEqual(username, PI_WEB_AUTH_USERNAME) || secretsEqual(username, "pi");
   const passwordMatches = isValidWebPassword(suppliedPassword, password);
   return usernameMatches && passwordMatches;
 }

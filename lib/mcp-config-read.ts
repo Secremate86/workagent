@@ -46,7 +46,7 @@ import { loadPiSdkInternals, type PiSdkInternals } from "./pi-sdk-internals";
 import { freshFolderTrustBreadth, getProjectTrustStatus, hasTrustRelevantEntries } from "./project-trust";
 
 // What Settings › MCP and the trust dialog list (ADR 0006): the entries of the
-// global `mcp.json` and of a project's `.pi/mcp.json`, read from the files
+// global `mcp.json` and of a project's `.workagent/mcp.json`, read from the files
 // only. Nothing here spawns a process, opens a connection, or resolves a
 // value — no `${VAR}` is expanded and no `!command` runs — so it never calls
 // the SDK's transport, its value resolvers, `oauthSettings()`, or its OAuth
@@ -195,7 +195,7 @@ function readGlobalFile(agentDir: string): { info: McpConfigFileInfo; text?: str
  * file. The same rule as the rest of the file access allow-list: a link is
  * authorized by where it resolves.
  */
-/** Where a project's `.pi/mcp.json` leads under the link rule, before anything is read from it. */
+/** Where a project's `.workagent/mcp.json` leads under the link rule, before anything is read from it. */
 export type ProjectMcpConfigLocation =
   | { kind: "found"; path: string; realPath: string }
   | { kind: "missing"; path: string }
@@ -219,7 +219,7 @@ function isSymbolicLink(path: string): boolean {
 
 /**
  * The project file under the link rule: its real path, a link in the file or
- * in `.pi/` above it included, must be inside `allowedRoots`, and a dangling
+ * in `.workagent/` above it included, must be inside `allowedRoots`, and a dangling
  * link is refused rather than taken for a missing file. Settings › MCP reads,
  * and `lib/mcp-config-file.ts` writes, only what this lets through.
  */
@@ -235,16 +235,16 @@ export function locateProjectMcpConfig(cwd: string, allowedRoots: Set<string>): 
     return { kind: "missing", path };
   }
   if (!isPathWithinRoots(realPath, resolveRealRoots(allowedRoots))) {
-    return { kind: "refused", path, realPath, reason: "link-outside", error: "a symbolic link outside the folders Pi Web may read" };
+    return { kind: "refused", path, realPath, reason: "link-outside", error: "a symbolic link outside the folders WorkAgent may read" };
   }
   return { kind: "found", path, realPath };
 }
 
 /**
  * Where a project file that does not exist yet would be created, under the
- * same rule: inside the real `.pi/` folder when there is one, which must
- * resolve inside `allowedRoots` (a dangling `.pi` link is refused), else in a
- * `.pi/` the writer creates in the project folder's real path.
+ * same rule: inside the real `.workagent/` folder when there is one, which must
+ * resolve inside `allowedRoots` (a dangling `.workagent` link is refused), else in a
+ * `.workagent/` the writer creates in the project folder's real path.
  */
 export function projectMcpConfigCreatePath(
   cwd: string,
@@ -265,7 +265,7 @@ export function projectMcpConfigCreatePath(
     }
   }
   if (!isPathWithinRoots(realDir, resolveRealRoots(allowedRoots))) {
-    return { ok: false, reason: "link-outside", error: "a symbolic link outside the folders Pi Web may read" };
+    return { ok: false, reason: "link-outside", error: "a symbolic link outside the folders WorkAgent may read" };
   }
   return { ok: true, realPath: join(realDir, "mcp.json") };
 }
@@ -356,7 +356,7 @@ function authStateOf(state: McpAuthState, name: string, url: string): { signedIn
 
 /**
  * The transport a connection uses, decided as the SDK's `createDefaultTransport()`
- * (and Pi Web's factory, and the value walk in `resolvedConfigValues()`)
+ * (and WorkAgent's factory, and the value walk in `resolvedConfigValues()`)
  * decide it: by whether the key `url` is present, whatever its value or
  * `type`. The validator decides differently — `{ type: "stdio", command, url }`
  * passes as stdio — but such an entry connects over HTTP, with its headers'
@@ -594,7 +594,7 @@ function refuseAsLoaderDoes(described: DescribedServer[]): void {
 
 export interface McpConfigReadOptions {
   agentDir: string;
-  /** The project to read `.pi/mcp.json` from; its file must resolve inside `allowedRoots`. */
+  /** The project to read `.workagent/mcp.json` from; its file must resolve inside `allowedRoots`. */
   project?: { cwd: string; allowedRoots: Set<string> };
   /** The SDK's validator and value parsers; without them entries are listed unchecked. */
   internals?: McpConfigReadInternals;
@@ -748,7 +748,7 @@ export interface ProjectMcpServers {
 }
 
 /**
- * What a project's `.pi/mcp.json` declares, for the trust dialog: read as
+ * What a project's `.workagent/mcp.json` declares, for the trust dialog: read as
  * `GET /api/mcp` reads it, from the file only and whether or not the project
  * is trusted. The global file is read too, only to tell which project entries
  * replace a global one of their name.
@@ -786,7 +786,7 @@ function mcpAvailability(
     return {
       available: false,
       reason: "internals-unavailable",
-      error: "Pi Web cannot load the SDK's MCP modules",
+      error: "WorkAgent cannot load the SDK's MCP modules",
       detail: internals.reason,
     };
   }
@@ -896,7 +896,7 @@ export async function readMcpOverview(options: McpOverviewOptions): Promise<McpR
   }
   // Whether sessions load the project's settings, as `projectTrustReloadOptions()` decides when one
   // starts: a folder that requires trust only with a decision that trusts it, never while trust.json
-  // cannot be read; one that requires none has no `.pi/settings.json`, which alone requires trust.
+  // cannot be read; one that requires none has no `.workagent/settings.json`, which alone requires trust.
   const projectSettingsLoad = projectInfo?.trust?.trusted === true;
   let switches: Record<BuiltinExtensionName, BuiltinExtensionSwitch> | undefined;
   try {

@@ -10,7 +10,7 @@ import { invalidateModelsCache } from "@/lib/models-cache";
  * invisible until pi-web itself publishes a new version (#914: Kimi for
  * Coding's K2.8). The SDK already carries the missing half: every built-in
  * provider is wrapped in a pi.dev catalog overlay that `ModelRuntime.refresh()`
- * fetches and persists to `~/.pi/agent/models-store.json`, keyed by provider.
+ * fetches and persists to `~/.workagent/agent/models-store.json`, keyed by provider.
  * Restoring that overlay needs no network, which is why "run the pi CLI once"
  * was the known workaround — the CLI refreshes with the network on, and every
  * pi-web request then reads what the CLI left behind. Both of pi-web's own

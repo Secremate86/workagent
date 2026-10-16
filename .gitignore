@@ -43,4 +43,24 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .factory
+/.workagent/
+/.playwright-mcp/
+/.venv/
+/.uv-cache/
+__pycache__/
+*.pyc
 e2e_*.mjs
+
+# Public release: runtime data and local evidence
+!.env.example
+/data/
+/test-records/
+/.test-tmp/
+/.fixture-*/
+/.probe-*/
+/e2e/artifacts/
+/e2e/results/
+*.log
+*.key
+*.p12
+*.pfx

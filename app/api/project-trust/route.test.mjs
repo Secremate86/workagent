@@ -19,7 +19,7 @@ process.env.PI_CODING_AGENT_DIR = agentDir;
 // A host variable the project's entry references: its name is listed, never its value.
 process.env.HOST_API_KEY = "host-variable-secret";
 await mkdir(agentDir, { recursive: true });
-await mkdir(join(cwd, ".pi"), { recursive: true });
+await mkdir(join(cwd, ".workagent"), { recursive: true });
 await mkdir(fresh, { recursive: true });
 await mkdir(outside, { recursive: true });
 
@@ -40,7 +40,7 @@ after(async () => {
 
 const marker = join(root, "command-ran");
 const globalPath = join(agentDir, "mcp.json");
-const projectPath = join(cwd, ".pi", "mcp.json");
+const projectPath = join(cwd, ".workagent", "mcp.json");
 const trustPath = join(agentDir, "trust.json");
 
 await writeFile(globalPath, JSON.stringify({ mcpServers: { github: { url: "https://api.github.example/mcp" } } }));
@@ -145,7 +145,7 @@ test("a folder without a project file lists no servers and says the file does no
     trusted: true,
     decision: null,
     inherited: false,
-    mcpFile: { scope: "project", path: join(fresh, ".pi", "mcp.json"), exists: false, problems: [] },
+    mcpFile: { scope: "project", path: join(fresh, ".workagent", "mcp.json"), exists: false, problems: [] },
     mcpServers: [],
   });
 });

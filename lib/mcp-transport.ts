@@ -77,7 +77,7 @@ export function createPiWebMcpTransportFactory(
   return (entry, cwd, authProvider) => {
     const field = findWebPasswordReference(entry.config, internals);
     if (field) {
-      throw new Error(`MCP server "${entry.name}" ${field} references ${WEB_PASSWORD_VARIABLE}, which Pi Web does not pass to MCP servers`);
+      throw new Error(`MCP server "${entry.name}" ${field} references ${WEB_PASSWORD_VARIABLE}, which WorkAgent does not pass to MCP servers`);
     }
     const transport = internals.createDefaultTransport(entry, cwd, authProvider);
     if ("url" in entry.config) return transport;

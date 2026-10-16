@@ -380,8 +380,8 @@ export function AgentsConfig({
   const displayedScope = creating ? targetScope : selected?.scope;
   const displayedPath = creating
     ? targetScope === "global"
-      ? `~/.pi/agent/agents/${draft.name || "..."}.md`
-      : `./.pi/agents/${draft.name || "..."}.md`
+      ? `~/.workagent/agent/agents/${draft.name || "..."}.md`
+      : `./.workagent/agents/${draft.name || "..."}.md`
     : selected
       ? displayProfilePath(selected, cwd) ?? t("agents.builtinPath")
       : "";

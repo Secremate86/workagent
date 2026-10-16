@@ -152,7 +152,7 @@ test("with a project, its group comes first and every row names its state", () =
   }
   // The untrusted project gets the trust notice, which also says its servers cannot be changed
   // here; without a Trust handler it has no button.
-  assert.match(markup, /<div id="[^"]+" role="status" class="config-notice">This project is not trusted, so the servers in its \.pi\/mcp\.json do not connect\. Pi Web does not change them until the project is trusted\.<\/div>/);
+  assert.match(markup, /<div id="[^"]+" role="status" class="config-notice">This project is not trusted, so the servers in its \.pi\/mcp\.json do not connect\. WorkAgent does not change them until the project is trusted\.<\/div>/);
 
   const trustedHtml = view({
     cwd: "/Users/me/repo",
@@ -206,7 +206,7 @@ test("an HTTP server's detail shows its URL, header names, the variables it send
   const shown = text(view({ selected: "global\0github" }));
   assert.match(shown, /URL https:\/\/api\.example\.com\/mcp/);
   assert.match(shown, /Headers Authorization Host variables/);
-  assert.match(shown, /Host variables Sends environment variables of the computer running Pi Web to this server on every connection: GITHUB_TOKEN in header Authorization/);
+  assert.match(shown, /Host variables Sends environment variables of the computer running WorkAgent to this server on every connection: GITHUB_TOKEN in header Authorization/);
   // Its Authorization header is how it signs in, which the Headers row already says; the URL label says HTTP.
   assert.doesNotMatch(shown, /Sign-in|Transport/);
   assert.match(shown, /Only the server's name and summary are listed; Code mode scripts search for its tools\./);
@@ -269,7 +269,7 @@ test("a refused entry shows why, and nothing it would run or send", () => {
     selected: "global\0pw",
     load: { state: "loaded", data: overview({ servers: [server({ name: "pw", transport: "http", url: "https://x/mcp", webPasswordField: { kind: "header", name: "Authorization" } })] }) },
   }));
-  assert.match(password, /Status Refused: references PI_WEB_PASSWORD References PI_WEB_PASSWORD\. Pi Web refuses to connect it/);
+  assert.match(password, /Status Refused: references PI_WEB_PASSWORD References PI_WEB_PASSWORD\. WorkAgent refuses to connect it/);
 });
 
 test("repository text is shown with its hidden characters escaped", () => {
@@ -287,7 +287,7 @@ test("repository text is shown with its hidden characters escaped", () => {
 
 test("MCP being off, a refused project folder, and file problems are said above and below the list", () => {
   const off = text(view({ load: { state: "loaded", data: overview({ mcp: { available: false, reason: "operator-disabled", error: "x" } }) } }));
-  assert.match(off, /MCP is off: PI_WEB_DISABLE_MCP is set where Pi Web runs\./);
+  assert.match(off, /MCP is off: PI_WEB_DISABLE_MCP is set where WorkAgent runs\./);
   const internals = text(view({ load: { state: "loaded", data: overview({ mcp: { available: false, reason: "internals-unavailable", error: "x", detail: "cannot find module" } }) } }));
   assert.match(internals, /cannot load the SDK's MCP modules\. .* cannot find module/);
   const builtin = text(view({ load: { state: "loaded", data: overview({ mcp: { available: false, reason: "builtin-disabled", error: "x", settingsPath: "/Users/me/.pi/agent/settings.json" } }) } }));
@@ -341,14 +341,14 @@ test("an untrusted project's notice offers Trust only where the trust dialog wou
 
   // The folder requires trust and is not trusted: the notice and its button share one line.
   const offered = withTrust({ trust: untrusted });
-  assert.match(offered, /<div id="[^"]+" role="status" class="config-notice has-action"><span class="config-notice-text">This project is not trusted, so the servers in its \.pi\/mcp\.json do not connect\. Pi Web does not change them until the project is trusted\.<\/span><button type="button"[^>]*>Trust project…<\/button><\/div>/);
+  assert.match(offered, /<div id="[^"]+" role="status" class="config-notice has-action"><span class="config-notice-text">This project is not trusted, so the servers in its \.pi\/mcp\.json do not connect\. WorkAgent does not change them until the project is trusted\.<\/span><button type="button"[^>]*>Trust project…<\/button><\/div>/);
   // An ancestor marked untrusted: trusting records this folder's own decision, which wins.
   assert.match(withTrust({ trust: { ...untrusted, decision: false, decisionPath: "/Users/me", inherited: true } }), trustButton);
 
   // The notice stays, without a button, where trusting could not succeed:
   // an unreadable trust.json, whose failure trusting would meet too...
   const unreadable = withTrust({ trustError: "Lock file is already being held" });
-  assert.match(unreadable, /Pi Web cannot read the trust store/);
+  assert.match(unreadable, /WorkAgent cannot read the trust store/);
   assert.doesNotMatch(unreadable, trustButton);
   // ...and an explicit false on a folder that requires no trust (a dangling .pi/mcp.json link),
   // where POST /api/project-trust answers trust-not-required.
@@ -387,13 +387,13 @@ test("a selected row renders with the ref attached as a plain button: the ref is
 test("loading, a failed load and an empty listing each say so", () => {
   assert.match(text(view({ load: { state: "loading" } })), /Loading\.\.\./);
   const denied = decode(view({ load: { state: "failed", error: { error: "Access denied", reason: "cwd-denied" } } }));
-  assert.match(denied, /<div role="alert" class="config-sidebar-message is-error">Could not read the MCP settings\. Pi Web may not read this folder\.<\/div>/);
+  assert.match(denied, /<div role="alert" class="config-sidebar-message is-error">Could not read the MCP settings\. WorkAgent may not read this folder\.<\/div>/);
   // Nothing to translate for an internal failure: its diagnostic is the reason.
   assert.match(text(view({ load: { state: "failed", error: { error: "EACCES: permission denied", reason: "internal" } } })), /Could not read the MCP settings\. EACCES: permission denied/);
   // A load that never answered ends with a way out, never "Loading..." for good.
   assert.match(
     text(view({ load: { state: "failed", error: { error: "GET /api/mcp did not answer within 15000 ms", timedOut: true } } })),
-    /Could not read the MCP settings\. Pi Web did not answer in time\. Press Refresh to try again\./,
+    /Could not read the MCP settings\. WorkAgent did not answer in time\. Press Refresh to try again\./,
   );
   const empty = text(view({ load: { state: "loaded", data: overview() } }));
   assert.match(empty, /No MCP servers yet\. Servers in ~\/\.pi\/agent\/mcp\.json and in a project's \.pi\/mcp\.json appear here\./);
@@ -444,7 +444,7 @@ test("the Code mode pane offers Automatic and Always on, and says once when its 
     ["Always on", true, false],
   ]);
   assert.match(text(always),
-    /Sessions start with Code mode on\. Sandbox Not checked yet: the self-test runs when the first session starts after Pi Web does\./);
+    /Sessions start with Code mode on\. Sandbox Not checked yet: the self-test runs when the first session starts after WorkAgent does\./);
 
   // While a save is on its way both options wait, and the pane says it is saving.
   const saving = codemodeView({ sandbox: { state: "available" }, builtinDisabled: false, preference: "automatic" }, {
@@ -467,7 +467,7 @@ test("Always on is disabled with a visible reason while no session could offer C
   };
   assert.equal(
     reasonOf(codemodeView({ sandbox: { state: "unavailable", error: "worker exited" }, builtinDisabled: false, preference: "automatic" })),
-    "Always on is unavailable: Code mode's sandbox cannot run on this Pi Web server.",
+    "Always on is unavailable: Code mode's sandbox cannot run on this WorkAgent server.",
   );
   const globalPath = "/Users/me/.pi/agent/settings.json";
   assert.equal(
@@ -484,7 +484,7 @@ test("Always on is disabled with a visible reason while no session could offer C
   // An unreadable settings file offers no choice to save into it.
   assert.match(down, /Cannot read the global settings file: Unexpected token/);
   assert.doesNotMatch(down, /Turns on when an MCP server/);
-  assert.match(down, /Cannot run on this Pi Web server, so no session offers Code mode: worker exited/);
+  assert.match(down, /Cannot run on this WorkAgent server, so no session offers Code mode: worker exited/);
   assert.match(down, /Turned off by -builtin:codemode in ~\/\.pi\/agent\/settings\.json\./);
   const html = view({ load: { state: "loaded", data: overview({ codemode: { sandbox: { state: "unavailable", error: "x" }, builtinDisabled: false, preference: "automatic" } }) } });
   assert.match(row(html, "Code mode"), /aria-label="Code mode: Unavailable"/);
@@ -515,12 +515,12 @@ test("a failed save is shown with its reason on every platform", () => {
     return decode(html).match(/<span role="alert" class="mcp-config-line is-error">([\s\S]*?)<\/span>(?=<span|<\/div>)/)?.[1];
   };
   assert.equal(text(failed({ error: "Untrusted API request", reason: "request-denied" })),
-    "Could not save the choice: Pi Web refused the request because it did not come from this page.");
+    "Could not save the choice: WorkAgent refused the request because it did not come from this page.");
   // An internal failure (the settings file no longer parses, its lock is held) shows its diagnostic.
   assert.equal(text(failed({ error: "Unexpected token n in JSON", reason: "internal" })), "Could not save the choice: Unexpected token n in JSON");
   assert.equal(text(failed({ error: "Failed to fetch" })), "Could not save the choice: Failed to fetch");
   assert.equal(text(failed({ error: "PUT /api/tools/settings did not answer within 15000 ms", timedOut: true })),
-    "Could not save the choice: Pi Web did not answer in time, so the choice may not have been saved.");
+    "Could not save the choice: WorkAgent did not answer in time, so the choice may not have been saved.");
 });
 
 test("a trusted project whose defaultTools decides Code mode is named in the pane", () => {
@@ -833,7 +833,7 @@ test("why a server cannot be changed is the visible note its controls point at",
     data: { project: { cwd: "/Users/me/repo", trust: untrusted } },
     view: { selected: "project\0repo" },
   }));
-  assert.equal(untrustedProject.note, "This project is not trusted, so Pi Web does not change its .pi/mcp.json.");
+  assert.equal(untrustedProject.note, "This project is not trusted, so WorkAgent does not change its .pi/mcp.json.");
   assert.match(untrustedProject.toggle, /disabled=""/);
   assert.match(untrustedProject.remove[0], new RegExp(`disabled="" aria-describedby="${untrustedProject.noteId}"`));
   // ...while the global servers beside it can still be changed.
@@ -841,15 +841,15 @@ test("why a server cannot be changed is the visible note its controls point at",
   // An unreadable trust store blocks the project the same way, with its own reason.
   assert.equal(
     detailControls(writeView({ data: { project: { cwd: "/Users/me/repo", trustError: "locked" } }, view: { selected: "project\0repo" } })).note,
-    "Pi Web cannot read the trust store (trust.json), or another program has it locked.",
+    "WorkAgent cannot read the trust store (trust.json), or another program has it locked.",
   );
 
   // MCP off on the server: everything is read-only, and the banner says so too.
   const offHtml = writeView({ data: { mcp: { available: false, reason: "operator-disabled", error: "x" } } });
   const mcpOff = detailControls(offHtml);
-  assert.equal(mcpOff.note, "MCP is off on this Pi Web server, so it changes no server.");
+  assert.equal(mcpOff.note, "MCP is off on this WorkAgent server, so it changes no server.");
   assert.match(mcpOff.toggle, /disabled=""/);
-  assert.match(text(offHtml), /MCP is off: PI_WEB_DISABLE_MCP is set where Pi Web runs\. The servers are listed, but no session connects them\. Servers cannot be changed here while MCP is off\./);
+  assert.match(text(offHtml), /MCP is off: PI_WEB_DISABLE_MCP is set where WorkAgent runs\. The servers are listed, but no session connects them\. Servers cannot be changed here while MCP is off\./);
   const offSwitch = decode(offHtml).match(/<span class="config-sidebar-group-count">1\/2<\/span>(<button[^>]*>)/)[1];
   const bannerId = offSwitch.match(/aria-describedby="([^"]+)"/)?.[1];
   assert.ok(bannerId, "the disabled group switch points at the banner");
@@ -861,7 +861,7 @@ test("why a server cannot be changed is the visible note its controls point at",
 
   // An entry that references PI_WEB_PASSWORD is never turned on, but can be removed.
   const password = detailControls(writeView({ view: { selected: "global\0pw" } }));
-  assert.equal(password.note, "It references PI_WEB_PASSWORD, so Pi Web does not turn it on.");
+  assert.equal(password.note, "It references PI_WEB_PASSWORD, so WorkAgent does not turn it on.");
   assert.match(password.toggle, /aria-checked="false"[^>]*disabled=""/);
   assert.doesNotMatch(password.remove[0], /disabled/);
 });
@@ -887,10 +887,10 @@ test("while a change is on its way every control waits, and the one in use says 
 test("a failed change is said in the server's pane with its reason, and a timeout as possibly landed", () => {
   const failed = (failure, key = "global\0docs") => decode(writeView({ view: { actionError: { key, failure } } }))
     .match(/<p role="alert" class="mcp-config-line is-error">([^<]*)<\/p>/)?.[1];
-  assert.equal(failed({ error: "/x: Unexpected token", reason: "unparsable", path: "/x" }), "Could not change the server: The file is not valid JSON, so Pi Web left it unchanged.");
+  assert.equal(failed({ error: "/x: Unexpected token", reason: "unparsable", path: "/x" }), "Could not change the server: The file is not valid JSON, so WorkAgent left it unchanged.");
   assert.equal(failed({ error: "EACCES: permission denied", reason: "internal" }), "Could not change the server: EACCES: permission denied");
   assert.equal(failed({ error: "POST /api/mcp did not answer within 15000 ms", timedOut: true }),
-    "Could not change the server: Pi Web did not answer in time, so the change may not have been made.");
+    "Could not change the server: WorkAgent did not answer in time, so the change may not have been made.");
   // Another server's failure is not shown on this one.
   assert.equal(failed({ error: "x", reason: "server-missing" }, "global\0pw"), undefined);
 });
@@ -908,7 +908,7 @@ test("the group switch names what it left undone under the heading", () => {
   assert.match(status, /<div role="status" class="config-sidebar-group-note">1 server\(s\) that reference PI_WEB_PASSWORD stayed off\.<\/div>/);
   assert.match(status, /<div role="alert" class="config-sidebar-group-error">Could not change 2 of 3 servers:\ngone: The file no longer defines this server\.\nodd: EIO/);
   const whole = decode(writeView({ view: { groupStatus: { scope: "project", keptOff: 0, failures: [], total: 1, error: { error: "x", reason: "project-untrusted" } } } }));
-  assert.match(whole, /<div role="alert" class="config-sidebar-group-error">Could not change the server: This project is not trusted, so Pi Web does not change its \.pi\/mcp\.json\.<\/div>/);
+  assert.match(whole, /<div role="alert" class="config-sidebar-group-error">Could not change the server: This project is not trusted, so WorkAgent does not change its \.pi\/mcp\.json\.<\/div>/);
   assert.ok(whole.indexOf("config-sidebar-group-error") < whole.indexOf(">global<"), "under the Project heading");
 });
 
@@ -1134,7 +1134,7 @@ test("a failed test shows the error and stderr, a sign-in, and no answer, each w
 
   const silent = statusRow(testView({ status: testedStatus("failed", { timedOut: true, durationMs: 20_000 }) }));
   assert.equal(silent.label, "Did not connect when tested");
-  assert.match(silent.value, /^<span class="mcp-config-line">It did not answer within 20\.0 s, so Pi Web stopped the test\. Tested at/);
+  assert.match(silent.value, /^<span class="mcp-config-line">It did not answer within 20\.0 s, so WorkAgent stopped the test\. Tested at/);
 
   // A test of a switched-off server is shown in its pane, but the row says what the file says.
   const off = testView({ enabled: false, status: testedStatus("connected") });
@@ -1158,19 +1158,19 @@ test("Test is disabled where the route would refuse it, and points at the visibl
   const projectServer = { scope: "project", sourcePath: "/Users/me/repo/.pi/mcp.json", transport: "stdio", url: undefined, command: "node" };
   assert.equal(
     reason(testView(projectServer, { data: { files: [globalFile, projectFile], project: untrusted }, view: { cwd: "/Users/me/repo" } })),
-    "This project is not trusted, so Pi Web does not start its servers.",
+    "This project is not trusted, so WorkAgent does not start its servers.",
   );
   assert.equal(
     reason(testView({}, { data: { mcp: { available: false, reason: "operator-disabled", error: "x" } } })),
-    "MCP is off on this Pi Web server, so it tests no server.",
+    "MCP is off on this WorkAgent server, so it tests no server.",
   );
   // A refused entry's own line says why, so Test points at it rather than a second line saying it again.
   const invalid = testView({ invalidError: "legacy SSE" });
   assert.equal(reason(invalid), "Pi refuses this entry, so it never connects: legacy SSE");
   assert.doesNotMatch(text(decode(invalid)), /nothing to test/);
   const password = testView({ webPasswordField: { kind: "header", name: "Authorization" } });
-  assert.match(reason(password), /^References PI_WEB_PASSWORD\. Pi Web refuses to connect it, .* header Authorization$/);
-  assert.doesNotMatch(text(decode(password)), /so Pi Web does not connect it/);
+  assert.match(reason(password), /^References PI_WEB_PASSWORD\. WorkAgent refuses to connect it, .* header Authorization$/);
+  assert.doesNotMatch(text(decode(password)), /so WorkAgent does not connect it/);
   // -builtin:mcp leaves it as an explicit action.
   const builtin = statusRow(testView({}, { data: { mcp: { available: false, reason: "builtin-disabled", error: "x", settingsPath: "/s.json" } } }));
   assert.doesNotMatch(builtin.button.attributes, /disabled/);
@@ -1195,14 +1195,14 @@ test("a test request that failed says why in a test's words, and keeps the last 
   const key = "global\0docs";
   const failure = (error, extra = {}) => statusRow(testView({ status: testedStatus("connected") }, { view: { tests: { [key]: { running: false, error, ...extra } } } }));
   const refused = failure({ error: "x", reason: "project-untrusted" });
-  assert.match(refused.value, /<span role="alert" class="mcp-config-line is-error">Could not test the server: This project is not trusted, so Pi Web does not start its servers\.<\/span>/);
+  assert.match(refused.value, /<span role="alert" class="mcp-config-line is-error">Could not test the server: This project is not trusted, so WorkAgent does not start its servers\.<\/span>/);
   assert.equal(refused.label, "Connected when tested", "the last result stays");
   assert.match(refused.text, /^0 tool\(s\) listed in/);
   assert.match(failure({ error: "x", reason: "server-missing" }).text, /Could not test the server: The file no longer defines this server\./);
   assert.match(failure({ error: "EIO: i/o error", reason: "internal" }).text, /Could not test the server: EIO: i\/o error/);
-  assert.match(failure({ error: "late", timedOut: true }).text, /Could not test the server: Pi Web did not answer in time\. The test may still finish; press Refresh to see its result\./);
+  assert.match(failure({ error: "late", timedOut: true }).text, /Could not test the server: WorkAgent did not answer in time\. The test may still finish; press Refresh to see its result\./);
   // A file problem reads as a test's, not as the writer's "left it unchanged".
-  assert.match(failure({ error: "x", reason: "unparsable" }).text, /Could not test the server: The file is not valid JSON, so Pi Web cannot read this entry to test it\./);
+  assert.match(failure({ error: "x", reason: "unparsable" }).text, /Could not test the server: The file is not valid JSON, so WorkAgent cannot read this entry to test it\./);
   assert.match(failure({ error: "x", reason: "entry-not-object" }).text, /Could not test the server: This entry is not an object, so there is nothing to test\. Fix it in the file\./);
   // A failure about the entry before it was edited is not shown for the edited one.
   assert.doesNotMatch(failure({ error: "x", reason: "server-invalid" }, { configKey: "old-key" }).text, /Could not test/);
@@ -1324,7 +1324,7 @@ test("a session that found the project untrusted is said in the Status row, what
 test("a session whose /mcp is another extension's is said above the list, unless MCP is off anyway", () => {
   const hostInactive = { owner: "/Users/me/repo/.pi/extensions/mcp.ts", cwd: "/Users/me/repo", updatedAt: 1 };
   const shown = text(decode(view({ load: { state: "loaded", data: overview({ servers: [httpServer], hostInactive }) } })));
-  assert.match(shown, /A session in ~\/repo connects none of these servers through Pi Web: its \/mcp command comes from ~\/repo\/\.pi\/extensions\/mcp\.ts, not from Pi's built-in MCP extension\. That extension may read mcp\.json and connect them its own way\./);
+  assert.match(shown, /A session in ~\/repo connects none of these servers through WorkAgent: its \/mcp command comes from ~\/repo\/\.pi\/extensions\/mcp\.ts, not from Pi's built-in MCP extension\. That extension may read mcp\.json and connect them its own way\./);
   const off = text(decode(view({
     load: { state: "loaded", data: overview({ servers: [httpServer], hostInactive, mcp: { available: false, reason: "operator-disabled", error: "x" } }) },
   })));
@@ -1371,7 +1371,7 @@ test("an OAuth server's pane signs in from its Sign-in row, under the Status row
   const id = blocked.value.match(/<button type="button" disabled="" aria-describedby="([^"]+)" class="config-button config-button-primary config-button-small">Sign in<\/button>/)?.[1];
   assert.ok(id, "Sign in is disabled and points at the reason");
   assert.match(blocked.value, new RegExp(`<span id="${id}" class="mcp-config-line is-dim">This project is not trusted`));
-  assert.match(blocked.text, /This project is not trusted, so Pi Web does not sign in to or out of its servers\./);
+  assert.match(blocked.text, /This project is not trusted, so WorkAgent does not sign in to or out of its servers\./);
 });
 
 test("the connection a sign-in made is summed up as a sign-in's in the Status row", () => {

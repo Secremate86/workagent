@@ -2,7 +2,7 @@ import type { McpServerConfig } from "@earendil-works/pi-coding-agent";
 import type { McpOAuthCredentialStore, McpOAuthServerStore, PiSdkInternals } from "./pi-sdk-internals";
 
 // What a sign-out of an MCP server bars (ADR 0006, Settings › MCP sign-in):
-// every connection Pi Web opened for the server before the sign-out, a
+// every connection WorkAgent opened for the server before the sign-out, a
 // sign-in's (`lib/mcp-sign-in.ts`) and a Test's (`lib/mcp-test.ts`), stores
 // nothing in `mcp-auth.json` afterwards. A refresh already on its way when the
 // tokens are removed would otherwise save renewed ones right after, and sign

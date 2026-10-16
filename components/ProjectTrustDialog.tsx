@@ -34,7 +34,7 @@ export interface ProjectTrustFailure {
   reason?: McpRefusalReason;
 }
 
-/** What the dialog knows about the project's `.pi/mcp.json`, and its trust as the same answer read it. */
+/** What the dialog knows about the project's `.workagent/mcp.json`, and its trust as the same answer read it. */
 export type ProjectTrustMcpListing =
   | { state: "loading" }
   | { state: "failed"; error?: string; reason?: McpRefusalReason; timedOut?: boolean }
@@ -96,7 +96,7 @@ function settledTrustNotice(status: ProjectTrustStatus | undefined): string | un
 }
 
 /**
- * Asks before trusting a project, and lists what its `.pi/mcp.json` would
+ * Asks before trusting a project, and lists what its `.workagent/mcp.json` would
  * connect once trusted (ADR 0006: the visibility that replaced per-entry
  * approval). The listing is fetched when the dialog opens, not taken from the
  * status the page loaded with: the file can change in between. Trust waits for

@@ -19,7 +19,7 @@ const previousDisable = process.env.PI_WEB_DISABLE_MCP;
 process.env.PI_CODING_AGENT_DIR = agentDir;
 delete process.env.PI_WEB_DISABLE_MCP;
 await mkdir(agentDir, { recursive: true });
-await mkdir(join(cwd, ".pi"), { recursive: true });
+await mkdir(join(cwd, ".workagent"), { recursive: true });
 await mkdir(outside, { recursive: true });
 
 const jiti = createJiti(import.meta.url, { alias: { "@": process.cwd() } });
@@ -39,7 +39,7 @@ after(async () => {
 
 const FIXTURE = fileURLToPath(new URL("../../../../lib/__fixtures__/mcp-env-server.mjs", import.meta.url));
 const globalPath = join(agentDir, "mcp.json");
-const projectPath = join(cwd, ".pi", "mcp.json");
+const projectPath = join(cwd, ".workagent", "mcp.json");
 const marker = join(root, "command-ran");
 const envFile = join(root, "env-names.json");
 const store = new ProjectTrustStore(agentDir);
@@ -141,7 +141,7 @@ test("requests from another page, not sent as JSON, or naming no server are refu
 test("an untrusted project's server is never started; a trusted one's is", async () => {
   assert.deepEqual(await post({ scope: "project", name: "repo", cwd }), {
     status: 403,
-    body: { error: "The project is not trusted, so Pi Web does not start its MCP servers", reason: "project-untrusted" },
+    body: { error: "The project is not trusted, so WorkAgent does not start its MCP servers", reason: "project-untrusted" },
   });
   store.set(cwd, false);
   assert.equal((await post({ scope: "project", name: "repo", cwd })).status, 403);
@@ -161,15 +161,15 @@ test("MCP off on the server refuses every test", async () => {
   process.env.PI_WEB_DISABLE_MCP = "1";
   assert.deepEqual(await post({ scope: "global", name: "lint" }), {
     status: 409,
-    body: { error: "PI_WEB_DISABLE_MCP is set, so Pi Web connects no MCP server", reason: "mcp-off" },
+    body: { error: "PI_WEB_DISABLE_MCP is set, so WorkAgent connects no MCP server", reason: "mcp-off" },
   });
   assert.equal((await get()).find((server) => server.name === "lint").status, undefined, "nothing was tested");
 });
 
-test("an entry Pi Web would not connect is refused before anything runs", async () => {
+test("an entry WorkAgent would not connect is refused before anything runs", async () => {
   assert.deepEqual(await post({ scope: "global", name: "pw" }), {
     status: 409,
-    body: { error: "\"pw\" references PI_WEB_PASSWORD, so Pi Web does not connect it", reason: "web-password", name: "pw" },
+    body: { error: "\"pw\" references PI_WEB_PASSWORD, so WorkAgent does not connect it", reason: "web-password", name: "pw" },
   });
   const invalid = await post({ scope: "global", name: "sse" });
   assert.equal(invalid.status, 409);

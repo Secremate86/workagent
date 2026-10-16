@@ -7,7 +7,7 @@ import { createMcpSignInDeps, mcpOAuthUrl, startMcpSignIn } from "@/lib/mcp-sign
 export const dynamic = "force-dynamic";
 
 // Settings › MCP's sign-in (ADR 0006): starts signing in to one OAuth server
-// of the global `mcp.json` or the panel's project `.pi/mcp.json`, or joins the
+// of the global `mcp.json` or the panel's project `.workagent/mcp.json`, or joins the
 // sign-in already under way for its URL, and answers at once with the flow
 // (`lib/mcp-sign-in.ts`). The browser then polls, pastes and cancels through
 // `/api/mcp/sign-in/[flowId]`; the flow is never tied to this request.

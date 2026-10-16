@@ -44,7 +44,7 @@ const linkedNode = {
 test("an expanded link that leaves the project names its target and offers to allow it", () => {
   const html = renderNode(linkedNode);
   assert.match(html, /Links to \/elsewhere\/project, outside this project/);
-  assert.match(html, /<button type="button" title="Browse \/elsewhere\/project until Pi Web restarts[^"]*"[^>]*>Allow browsing<\/button>/);
+  assert.match(html, /<button type="button" title="Browse \/elsewhere\/project until WorkAgent restarts[^"]*"[^>]*>Allow browsing<\/button>/);
   assert.doesNotMatch(html, />empty</);
 });
 

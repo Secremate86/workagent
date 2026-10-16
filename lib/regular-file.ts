@@ -4,8 +4,8 @@ import { closeSync, constants, fstatSync, openSync, readFileSync, readSync } fro
 const OPEN_FLAGS = constants.O_RDONLY | (constants.O_NONBLOCK || 0);
 
 /**
- * The largest trusted project `.pi/settings.json` a read path such as
- * `GET /api/mcp` parses, as for the project's `.pi/mcp.json`. pi itself has no
+ * The largest trusted project `.workagent/settings.json` a read path such as
+ * `GET /api/mcp` parses, as for the project's `.workagent/mcp.json`. pi itself has no
  * limit; a settings file anywhere near this size is not one.
  */
 export const PROJECT_SETTINGS_MAX_BYTES = 1024 * 1024;
@@ -25,7 +25,7 @@ function isMissing(error: unknown): boolean {
  * including one still growing past the limit while it is read.
  *
  * For a settings file a GET reads beside a session, such as a trusted
- * project's `.pi/settings.json`: anything there would otherwise stall the
+ * project's `.workagent/settings.json`: anything there would otherwise stall the
  * whole server, since the read is synchronous.
  */
 export function readRegularFileText(path: string, maxBytes?: number): string | undefined {

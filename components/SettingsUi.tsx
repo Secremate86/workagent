@@ -347,7 +347,7 @@ export function ConfigScopeSwitch<S extends string>({
 
 /**
  * A path that may wrap between folders: a break opportunity after each
- * separator, so a narrow pane breaks `~/.pi/agent/agents/` before the file
+ * separator, so a narrow pane breaks `~/.workagent/agent/agents/` before the file
  * name instead of inside it. A split, not a lookbehind, which Safari 16.2
  * cannot parse.
  */

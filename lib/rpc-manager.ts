@@ -52,6 +52,9 @@ import type { McpHost } from "./mcp-host";
 import { mcpPromptPreparation, type McpCommandCandidate } from "./mcp-command";
 import { createReadOnlyMcpPolicyExtension, createSubagentMcpPolicyExtension } from "./mcp-read-only-policy";
 import { createSubagentSkillsBinding } from "./subagent-skills";
+import { authorizeWorkAgentAction, createWorkAgentPolicyExtension, WORKAGENT_POLICY_EXTENSION_PATH, WORKAGENT_POLICY_VERSION } from "./workagent/policy";
+import { createWorkAgentRoutinesExtension } from "./workagent/automation";
+import { createWorkAgentMemoryExtension } from "./workagent/memory";
 import { isNestedToolExecutionEvent } from "./agent-event-wire";
 import {
   appendClearedSessionToolSelection,
@@ -293,6 +296,7 @@ export function resolveActiveToolNames(
 // ============================================================================
 
 export class AgentSessionWrapper {
+  readonly workAgentPolicyVersion = WORKAGENT_POLICY_VERSION;
   // A Set, not an array: an SSE stream unsubscribes from inside emit() when it
   // closes on session_shutdown, and splicing an array mid-iteration made the
   // next stream miss that same event.
@@ -308,6 +312,7 @@ export class AgentSessionWrapper {
   private extensionWidgetGenerations = new Map<string, number>();
   private extensionWidgetsResetting = false;
   private pendingPromptCount = 0;
+  private pendingBashApproval = false;
   private activeMutatingCommands = 0;
   private sessionReplacement: "fork" | "clone" | null = null;
   private agentRunNeedsCompletion = false;
@@ -383,7 +388,7 @@ export class AgentSessionWrapper {
   }
 
   isRunning(): boolean {
-    return this._alive && (this.pendingPromptCount > 0 || this.inner.isStreaming || this.inner.isCompacting || this.inner.isBashRunning);
+    return this._alive && (this.pendingPromptCount > 0 || this.pendingBashApproval || this.inner.isStreaming || this.inner.isCompacting || this.inner.isBashRunning);
   }
 
   /**
@@ -552,7 +557,7 @@ export class AgentSessionWrapper {
             id: randomUUID(),
             method: "notify",
             notifyType: "warning",
-            message: "Extension requested shutdown, but shutdown is not supported in Pi Web.",
+            message: "Extension requested shutdown, but shutdown is not supported in WorkAgent.",
           } as ExtensionUiRequest as AgentEvent),
           onError: (error) => this.emit({
             type: "extension_error",
@@ -809,6 +814,9 @@ export class AgentSessionWrapper {
       // either; refuse as /api/agent/new does. (A `!` command already refuses.)
       if (type === "prompt" && !existsSync(this.cwd)) {
         throw new Error(`Directory does not exist: ${this.cwd}`);
+      }
+      if (this.pendingBashApproval && !["get_state", "get_tools", "get_commands", "get_session_stats", "get_last_assistant_text", "abort", "abort_bash", "extension_ui_response", "extension_ui_input"].includes(type)) {
+        throw new Error("A shell command approval is already in progress");
       }
 
       switch (type) {
@@ -1291,30 +1299,53 @@ export class AgentSessionWrapper {
       }
 
       case "bash": {
-        if (this.pendingPromptCount > 0 || this.inner.isStreaming || this.inner.isCompacting || this.inner.isBashRunning) {
+        if (this.pendingBashApproval || this.pendingPromptCount > 0 || this.inner.isStreaming || this.inner.isCompacting || this.inner.isBashRunning) {
           throw new Error("Cannot run a shell command while the session is busy");
         }
-        const execution = this.inner.executeBash(
-          command.command as string,
-          undefined,
-          {
-            excludeFromContext: command.excludeFromContext as boolean | undefined,
-            operations: createProjectCommandBashOperations({
-              shellPath: this.inner.settingsManager.getShellPath(),
-            }),
-          },
-        );
+        if (this.extensionUiAbortController.signal.aborted) this.extensionUiAbortController = new AbortController();
+        const approvalController = this.extensionUiAbortController;
+        const bashCommand = String(command.command ?? "");
+        this.pendingBashApproval = true;
         try {
+          const authorization = await authorizeWorkAgentAction({
+            sessionId: this.inner.sessionId,
+            toolName: "bash",
+            input: { command: bashCommand },
+            cwd: this.cwd,
+            hasUI: true,
+            confirm: (title, message, opts) => this.createExtensionUiContext().confirm(title, message, opts),
+            signal: approvalController.signal,
+          });
+          if (!authorization.allowed || approvalController.signal.aborted || approvalController !== this.extensionUiAbortController) {
+            throw new Error(`执行策略已阻止 Shell 命令：${authorization.reason}`);
+          }
+          if (this.pendingPromptCount > 0 || this.inner.isStreaming || this.inner.isCompacting || this.inner.isBashRunning) {
+            throw new Error("会话在审批期间开始了其他操作，Shell 命令未执行");
+          }
+          const execution = this.inner.executeBash(
+            bashCommand,
+            undefined,
+            {
+              excludeFromContext: command.excludeFromContext as boolean | undefined,
+              operations: createProjectCommandBashOperations({
+                shellPath: this.inner.settingsManager.getShellPath(),
+              }),
+            },
+          );
           const result = await execution;
           this.persistBashOnlySession();
           return result;
         } finally {
+          this.pendingBashApproval = false;
           this.resetIdleTimer();
           invalidateSessionListCache();
         }
       }
 
       case "abort_bash": {
+        if (this.pendingBashApproval && !this.extensionUiAbortController.signal.aborted) {
+          this.extensionUiAbortController.abort(new DOMException("Shell approval cancelled", "AbortError"));
+        }
         this.forceShutdownOnIdle = true;
         this.resetIdleTimer();
         this.inner.abortBash();
@@ -1982,7 +2013,7 @@ export class AgentSessionWrapper {
       get theme() { return PLAIN_TEXT_THEME; },
       getAllThemes: () => [],
       getTheme: () => undefined,
-      setTheme: () => ({ success: false, error: "Theme switching is not supported in Pi Web extension UI yet" }),
+      setTheme: () => ({ success: false, error: "Theme switching is not supported in WorkAgent extension UI yet" }),
       getToolsExpanded: () => false,
       setToolsExpanded: () => {},
     };
@@ -2096,6 +2127,7 @@ const SUBAGENT_CONTROLLER = createSubagentController({
     registerRpcWrapper(wrapper);
     return wrapper;
   },
+  ensureSessionPolicy: (sessionId, wrapper) => ensureWorkAgentPolicySession(sessionId, wrapper as AgentSessionWrapper),
   reopenSession: async (sessionId, sessionFile) =>
     (await startRpcSession(sessionId, sessionFile, undefined)).session,
   resolveSessionPath,
@@ -2178,6 +2210,37 @@ function trackStartingSession(cwd: string): () => void {
 
 export function getRpcSession(sessionId: string): AgentSessionWrapper | undefined {
   return getRegistry().get(sessionId);
+}
+
+export class WorkAgentPolicySessionUnavailableError extends Error {
+  readonly status = 409;
+  constructor(message: string) { super(message); this.name = "WorkAgentPolicySessionUnavailableError"; }
+}
+
+function hasWorkAgentPolicyExtension(wrapper: AgentSessionWrapper): boolean {
+  return wrapper.workAgentPolicyVersion === WORKAGENT_POLICY_VERSION
+    && wrapper.inner.extensionRunner.getExtensionPaths?.().includes(WORKAGENT_POLICY_EXTENSION_PATH) === true;
+}
+
+/** Reopen an idle pre-policy wrapper with the current resource loader. Never interrupt an active run. */
+export async function ensureWorkAgentPolicySession(
+  sessionId: string,
+  wrapper = getRpcSession(sessionId),
+): Promise<AgentSessionWrapper> {
+  if (!wrapper?.isAlive()) throw new Error("Session not found");
+  if (hasWorkAgentPolicyExtension(wrapper)) return wrapper;
+  if (wrapper.isRunning()) {
+    throw new WorkAgentPolicySessionUnavailableError("此会话仍在旧权限策略下运行；请等待本轮结束后重试，当前运行不会被中断。");
+  }
+  const sessionFile = wrapper.sessionFile;
+  const cwd = wrapper.cwd;
+  const toolNames = wrapper.inner.getActiveToolNames();
+  await wrapper.shutdown();
+  const started = await startRpcSession(sessionId, sessionFile, sessionFile ? undefined : cwd, { toolNames });
+  if (!hasWorkAgentPolicyExtension(started.session)) {
+    throw new WorkAgentPolicySessionUnavailableError("无法为会话加载 WorkAgent 执行策略，请重新打开会话。");
+  }
+  return started.session;
 }
 
 export interface SetRpcSessionToolsResult {
@@ -2413,7 +2476,13 @@ export async function startRpcSession(
   const locks = getLocks();
 
   const existing = registry.get(sessionId);
-  if (existing?.isAlive()) return { session: existing, realSessionId: sessionId };
+  if (existing?.isAlive()) {
+    if (!hasWorkAgentPolicyExtension(existing)) {
+      const session = await ensureWorkAgentPolicySession(sessionId, existing);
+      return { session, realSessionId: session.sessionId };
+    }
+    return { session: existing, realSessionId: sessionId };
+  }
 
   const inflight = locks.get(sessionId);
   if (inflight) return inflight;
@@ -2471,7 +2540,7 @@ export async function startRpcSession(
       // Otherwise DO NOT pass a builtin-only allow-list: passing CODING_TOOL_NAMES
       // set allowedToolNames to coding builtins only, which filtered every
       // extension/package-provided tool (e.g. subagents, web access) out of the
-      // tool registry — so they were unavailable in Pi Web sessions even though the
+      // tool registry — so they were unavailable in WorkAgent sessions even though the
       // `pi` CLI keeps them. Leaving the allow-list unset lets the SDK register all
       // tools (and activate extension tools); we narrow the ACTIVE set below.
       toolsOption = selectedToolNames.length === 0 ? [] : undefined;
@@ -2500,6 +2569,10 @@ export async function startRpcSession(
     const builtins = subagentResources || chatOnly
       ? undefined
       : await createPiWebBuiltinExtensions({ agentDir });
+    const workAgentExtensions = subagentResources || chatOnly ? [] : await Promise.all([
+      createWorkAgentRoutinesExtension(agentDir),
+      createWorkAgentMemoryExtension(agentDir),
+    ]);
     const subagentCodemode = subagentResources?.codemode
       ? await createSubagentCodemodeExtension({
           agentDir,
@@ -2522,6 +2595,7 @@ export async function startRpcSession(
         ?? (chatOnly ? subagentResources.appendSystemPrompt[0] ?? "" : undefined),
     }) : undefined;
     const subagentExtensionFactories = [
+      createWorkAgentPolicyExtension(agentDir),
       ...(subagentCodemode ? [subagentCodemode] : []),
       ...(subagentMcp && subagentResources
         ? [...subagentMcp.extensions, createSubagentMcpPolicyExtension(() => subagentResources)]
@@ -2549,9 +2623,11 @@ export async function startRpcSession(
             appendSystemPrompt: subagentResources.appendSystemPrompt,
           }
         : chatOnly
-          ? { ...CHAT_ONLY_RESOURCE_LOADER_OPTIONS, extensionFactories: [exactSystemPromptExtension] }
+          ? { ...CHAT_ONLY_RESOURCE_LOADER_OPTIONS, extensionFactories: [exactSystemPromptExtension, createWorkAgentPolicyExtension(agentDir)] }
         : {
             extensionFactories: [
+              createWorkAgentPolicyExtension(agentDir),
+              ...workAgentExtensions,
               ...(builtins?.extensions ?? []),
               createReadOnlyMcpPolicyExtension(),
               createProjectCommandBashExtension({
@@ -2638,7 +2714,7 @@ export async function startRpcSession(
     // A pinned selection replaces only the coding tools of the SDK's initial loadout, which
     // already holds the extension tools pi activates on registration and whatever
     // `defaultTools` names (such as `+codemode`), so installed extensions stay usable in
-    // Pi Web just like in the `pi` CLI.
+    // WorkAgent just like in the `pi` CLI.
     if (!subagentResources && !chatOnly) {
       const initialToolNames = inner.getActiveToolNames();
       inner.setActiveToolsByName(

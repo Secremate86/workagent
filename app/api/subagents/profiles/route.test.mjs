@@ -53,8 +53,8 @@ test("profile PUT and PATCH retain authored named/empty skills, activation and f
   const cwd = await mkdtemp(join(tmpdir(), "skill-route-"));
   allowFileRoot(cwd);
   t.after(() => rm(cwd, { recursive: true, force: true }));
-  await mkdir(join(cwd, ".pi", "agents"), { recursive: true });
-  const file = join(cwd, ".pi", "agents", "api-test-agent.md");
+  await mkdir(join(cwd, ".workagent", "agents"), { recursive: true });
+  const file = join(cwd, ".workagent", "agents", "api-test-agent.md");
   for (const authored of ['"review, audit"', '[review, audit]', '[]', 'none']) {
     await writeFile(file, `---\nskills: ${authored}\nload_skills: false\nextensions: custom-extension\nforeign: retain-me\n---\nPrompt`);
     for (const enabled of [false, true]) {
@@ -97,7 +97,7 @@ test("profile PUT persists each codemode choice in global and project profiles",
   t.after(() => rm(join(testAgentDir, "agents", `${name}.md`), { force: true }));
 
   for (const scope of ["global", "project"]) {
-    const file = join(scope === "global" ? testAgentDir : join(cwd, ".pi"), "agents", `${name}.md`);
+    const file = join(scope === "global" ? testAgentDir : join(cwd, ".workagent"), "agents", `${name}.md`);
     for (const codemode of ["on", "off", "inherit"]) {
       await t.test(`${scope}: ${codemode}`, async () => {
         const response = await PUT(jsonRequest("PUT", { cwd, scope, profile: profile({ name, codemode }) }));
@@ -126,7 +126,7 @@ test("profile PUT defaults an omitted codemode to off", async (t) => {
   t.after(() => rm(join(testAgentDir, "agents", `${name}.md`), { force: true }));
 
   for (const scope of ["global", "project"]) {
-    const file = join(scope === "global" ? testAgentDir : join(cwd, ".pi"), "agents", `${name}.md`);
+    const file = join(scope === "global" ? testAgentDir : join(cwd, ".workagent"), "agents", `${name}.md`);
     // Older API clients omit the field, including when updating an existing explicit choice.
     for (const existing of [false, true]) {
       if (existing) {
@@ -149,7 +149,7 @@ test("profile PATCH retains codemode when toggling global and project profiles",
   t.after(() => rm(join(testAgentDir, "agents", `${name}.md`), { force: true }));
 
   for (const scope of ["global", "project"]) {
-    const dir = join(scope === "global" ? testAgentDir : join(cwd, ".pi"), "agents");
+    const dir = join(scope === "global" ? testAgentDir : join(cwd, ".workagent"), "agents");
     await mkdir(dir, { recursive: true });
     const file = join(dir, `${name}.md`);
     for (const [authored, expected] of [["on", "on"], ["off", "off"], ["inherit", "inherit"], [undefined, "off"], [true, "on"], [false, "off"]]) {
@@ -193,7 +193,7 @@ test("profile PUT rejects invalid codemode without creating or overwriting files
   const invalidValues = [null, true, false, 0, 1, "", "auto", "ON", "OFF", "INHERIT", " on ", [], ["on"], {}];
 
   for (const scope of ["global", "project"]) {
-    const file = join(scope === "global" ? testAgentDir : join(cwd, ".pi"), "agents", `${name}.md`);
+    const file = join(scope === "global" ? testAgentDir : join(cwd, ".workagent"), "agents", `${name}.md`);
     for (const existing of [false, true]) {
       let original;
       if (existing) {
@@ -224,7 +224,7 @@ test("profiles route creates, lists, and deletes a project profile", async (t) =
   assert.deepEqual(putBody.profile.tools, []);
   assert.equal(putBody.profile.loadSkills, true);
   assert.equal(putBody.profile.loadExtensions, true);
-  const source = await readFile(join(cwd, ".pi", "agents", "api-test-agent.md"), "utf8");
+  const source = await readFile(join(cwd, ".workagent", "agents", "api-test-agent.md"), "utf8");
   assert.match(source, /tools: none/);
   assert.match(source, /load_skills: true/);
   assert.match(source, /load_extensions: true/);

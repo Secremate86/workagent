@@ -1,6 +1,6 @@
 import type { McpOverrideKey } from "./api-types";
 
-// Project overrides of global MCP servers (pi 1.0.1): a project `.pi/mcp.json`
+// Project overrides of global MCP servers (pi 1.0.1): a project `.workagent/mcp.json`
 // entry without `command`, `url` or `type` changes only `enabled`, `exposure`
 // and `toolExposure` of the global server of its name. The rules of the SDK's
 // `loadMcpConfig()` and `updateMcpServerConfig()`, for the listing

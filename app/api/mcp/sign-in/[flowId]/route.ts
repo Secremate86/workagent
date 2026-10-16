@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // One Settings › MCP sign-in by its id (`lib/mcp-sign-in.ts`):
 //   GET     where it stands, which the panel polls about once a second;
 //   POST    { redirectUrl }: the address the browser was sent back to, for a
-//           browser that cannot reach Pi Web's loopback listener (another
+//           browser that cannot reach WorkAgent's loopback listener (another
 //           device, a remote server); a paste that is not this sign-in's
 //           answer is refused with 400 and the sign-in keeps waiting;
 //   DELETE  cancel it.
@@ -19,7 +19,7 @@ function refusal(status: number, reason: McpRefusalReason, error: string) {
   return NextResponse.json({ error, reason } satisfies McpErrorResponse, { status });
 }
 
-const UNKNOWN = "No sign-in has that id: it ended over a minute ago, or Pi Web restarted";
+const UNKNOWN = "No sign-in has that id: it ended over a minute ago, or WorkAgent restarted";
 
 type Context = { params: Promise<{ flowId: string }> };
 

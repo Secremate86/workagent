@@ -2117,7 +2117,7 @@ export function ModelsConfig({ onClose, embedded = false, cwd = null }: {
 
   return (
     <>
-    <ConfigPanelShell embedded={embedded} title={t("common.models")} subtitle="~/.pi/agent/models.json" closeLabel={t("i18n.close")} onClose={onClose}>
+    <ConfigPanelShell embedded={embedded} title={t("common.models")} subtitle="~/.workagent/agent/models.json" closeLabel={t("i18n.close")} onClose={onClose}>
 
         <EnabledModelsBanner controller={enabledModels} />
 

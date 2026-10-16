@@ -1,7 +1,7 @@
 /**
  * Global exponential backoff for password authentication failures.
  *
- * Pi Web serves a single operator and binds to 127.0.0.1, so Next.js route
+ * WorkAgent serves a single operator and binds to 127.0.0.1, so Next.js route
  * handlers have no reliable client address (`x-forwarded-for` is spoofable and
  * absent for direct connections). Rather than trusting a per-IP key, every
  * failure feeds one shared counter and briefly blocks all password attempts.

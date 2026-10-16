@@ -1,10 +1,10 @@
 import { homedir } from "os";
 import path from "path";
 
-// "Use default directory" opens a fresh folder per day, ~/pi-cwd/<YYYYMMDD>.
+// "Use default directory" opens a fresh folder per day, ~/workagent-cwd/<YYYYMMDD>.
 // The date keeps a first-time user from landing in a folder that already holds
 // their own data, and doubles as a daily scratch cwd.
-const DEFAULT_CWD_PARENT = "pi-cwd";
+const DEFAULT_CWD_PARENT = "workagent-cwd";
 
 /** Local calendar date as YYYYMMDD, so the folder matches the user's "today". */
 export function localDateStamp(now = new Date()): string {

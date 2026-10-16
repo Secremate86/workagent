@@ -67,7 +67,7 @@ export function replaceUploadFile(destination: string, bytes: Buffer): void {
 
   // A private directory beside the destination keeps the rename on the same
   // filesystem and gives us ownership of the staging file, even on write failure.
-  const stagingDirectory = fs.mkdtempSync(path.join(path.dirname(destination), ".pi-upload-"));
+  const stagingDirectory = fs.mkdtempSync(path.join(path.dirname(destination), ".workagent-upload-"));
   const stagingFile = path.join(stagingDirectory, "upload");
   try {
     fs.writeFileSync(stagingFile, bytes, { flag: "wx", mode: stat.mode & 0o777 });
